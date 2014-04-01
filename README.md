@@ -13,6 +13,10 @@ A tiny logic-less, super-easy javascript template engine without any dependence.
 1. More useful partial template than `mustache`.
 1. Matching [eoraptor-jst](https://www.npmjs.org/package/eoraptor-jst) tool in npm package.
 
+## Unit test
+
+A quick glance at the [unit test](http://jias.github.io/eoraptor.js/test/test.html) maybe the most directly way to dive in.
+
 ## Overview
 
 #### Base
