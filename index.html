@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Eoraptor.js : A tiny logic-less, super-easy javascript template engine without any dependence." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Eoraptor.js</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/Jias/eoraptor.js">View on GitHub</a>
+
+          <h1 id="project_title">Eoraptor.js</h1>
+          <h2 id="project_tagline">A tiny logic-less, super-easy javascript template engine without any dependence.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/Jias/eoraptor.js/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/Jias/eoraptor.js/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="eoraptorjs" class="anchor" href="#eoraptorjs"><span class="octicon octicon-link"></span></a>eoraptor.js</h1>
+
+<p>A tiny logic-less, super-easy javascript template engine without any dependence.</p>
+
+<h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ol>
+<li>Cleaner grammer than <code>mustache</code>.</li>
+<li>Without <code>with</code> statement in compiled function, recognized performance problems will be shielded.</li>
+<li>More detailed error logging.</li>
+<li>Build-in <code>index</code> support when iterating an array.</li>
+<li>Build-in <code>else if</code> support.</li>
+<li>TODO: Customizable output filter plugin(0%).</li>
+<li>More useful partial template than <code>mustache</code>.</li>
+<li>Matching <a href="https://www.npmjs.org/package/eoraptor-jst">eoraptor-jst</a> tool in npm package.</li>
+</ol><h2>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<h4>
+<a name="base" class="anchor" href="#base"><span class="octicon octicon-link"></span></a>Base</h4>
+
+<p>Compiling and rendering in browser runtime:</p>
+
+<p>Demo: </p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+    &lt;script src="path/to/eoraptor.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        var helloTplFn = eoraptor.compile("Hello {{this.name}}!");
+        console.log(helloTplFn({"name": "world"}));
+        console.log(helloTplFn.source);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<h4>
+<a name="advanced" class="anchor" href="#advanced"><span class="octicon octicon-link"></span></a>Advanced</h4>
+
+<p>Rendering directly with the template function that has been pre-compiled before. </p>
+
+<p>Demo: </p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+    &lt;script src="path/to/eoraptor.js"&gt;&lt;/script&gt;
+    &lt;script src="path/to/eoraptor.render.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        console.log(eoraptor.helloTplFn({"name": "world"}));
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>The name of <code>eoraptor.render.js</code> file would be any other word as you like when pre-compile building in nodejs, and the content in it would look like this:</p>
+
+<pre><code>// content in eoraptor.render.js
+(function () {
+    var eo = eoraptor;
+    eo.helloTplFn = function (data){
+        var t__=data, r__=[];
+        r__.push("Hello ");
+        r__.push(t__.name);
+        r__.push("!");
+        return r__.join("");
+    };
+    // other pre-compiled function
+    // ...
+});
+</code></pre>
+
+<p>The <code>key</code> of a render template is get from the template file's name.</p>
+
+<pre><code>// content in helloTplFn.js
+Hello {{this.name}}!
+</code></pre>
+
+<h2>
+<a name="api" class="anchor" href="#api"><span class="octicon octicon-link"></span></a>API</h2>
+
+<h4>
+<a name="compiling-and-caching-a-template" class="anchor" href="#compiling-and-caching-a-template"><span class="octicon octicon-link"></span></a>Compiling and caching a template</h4>
+
+<p><code>eoraptor.compile(template)</code> / <code>eoraptor.compile(name, template)</code></p>
+
+<ul>
+<li>template: the template string.</li>
+<li>name: the name will be used as the <code>key</code> of eorapter.cache. </li>
+</ul><p>The method returns an <code>template function</code> with two properties:</p>
+
+<pre><code>function render(data) {...};
+render.render = render;
+render.source = 'function(data) {...}';
+return render;
+</code></pre>
+
+<p>The <code>render</code> function(and it's <code>render</code> method) is a compiled template function which takes one parameter as the context data. The <code>source</code> is only the string form of the <code>render</code> function, used by the pre-compile tool.</p>
+
+<p>Demo:</p>
+
+<pre><code>var tpl = eoraptor.compile('...');
+// method 1
+tpl.render(data);
+// method 2
+tpl(data);
+</code></pre>
+
+<h4>
+<a name="setting-delimeter" class="anchor" href="#setting-delimeter"><span class="octicon octicon-link"></span></a>Setting delimeter</h4>
+
+<p><code>eoraptor.setDelimeter(start, end)</code></p>
+
+<ul>
+<li>start: optional, the start flag for delimeter, default to '{{'.</li>
+<li>end: optional, the start flag for delimeter, default to '}}'.</li>
+</ul><p>Demo:</p>
+
+<pre><code>eoraptor.setDelimiter('&lt;%', '%&gt;');
+var tpl = eoraptor.compile('&lt;%this.name%&gt;');
+tpl({"name": "eoraptor.js"});
+// "eoraptor.js"
+</code></pre>
+
+<h2>
+<a name="template" class="anchor" href="#template"><span class="octicon octicon-link"></span></a>Template</h2>
+
+<h4>
+<a name="variable" class="anchor" href="#variable"><span class="octicon octicon-link"></span></a>variable</h4>
+
+<p><code>{{this.key}}</code> / <code>{{this["key"]}}</code></p>
+
+<ul>
+<li>key: required, the direct value of the <code>key</code> in context data.</li>
+</ul><blockquote>
+<p>Under the hood, the function returned by <code>eoraptor.compile()</code> is builded without <code>with</code> statement, so the expression needs to start with <code>this.</code> prefix and it will not throw errors like <code>underscore</code>.</p>
+</blockquote>
+
+<p>Demo: output the value of the <code>key</code> in context data. </p>
+
+<pre><code>var tpl = eoraptor.compile("{{this.name}}");
+tpl.render({"name": "eoraptor.js"}); 
+// "eoraptor.js"
+</code></pre>
+
+<p>Demo: if there is no such <code>key</code> in context data.</p>
+
+<pre><code>var tpl = eoraptor.compile("{{this.name}}");
+tpl.render({}); 
+// "" empty string
+</code></pre>
+
+<h4>
+<a name="html-escaped-variable" class="anchor" href="#html-escaped-variable"><span class="octicon octicon-link"></span></a>html-escaped variable:</h4>
+
+<p><code>{{@this.key}}</code> / <code>{{@this["key"]}}</code></p>
+
+<ul>
+<li>key: required, the direct value of the <code>key</code> in context data.</li>
+</ul><p>demo: output the html-escaped value of the <code>key</code> in context data. </p>
+
+<pre><code>var tpl = eoraptor.compile("{{@this.name}}");
+tpl.render({"name": "&lt;h1&gt; eoraptor.js &lt;/h1&gt;"}); 
+// "&amp;lt;h1&amp;gt; eoraptor.js &amp;lt;/h1&amp;gt;"
+</code></pre>
+
+<h4>
+<a name="if-block" class="anchor" href="#if-block"><span class="octicon octicon-link"></span></a>if block:</h4>
+
+<p>START with: <code>{{#anyValue}}</code> / <code>{{#this.key}}</code> / <code>{{#this["key"]}}</code> / <code>{{#anyValue vs anyValue}}</code></p>
+
+<ul>
+<li>anyValue: any value of any types like <code>foo</code>, <code>true</code>, <code>[]</code>, <code>{}</code>, etc.</li>
+<li>key: required, the direct value of the <code>key</code> in context data.</li>
+<li>vs: available comparation flags contains <code>==</code>, <code>===</code>, <code>!=</code>, <code>!==</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&lt;</code>
+</li>
+</ul><p>END with: <code>{{/}}</code></p>
+
+<p>Demo: To determine whether the <code>if()</code> is like <code>true</code>, comparing by <code>==</code>.</p>
+
+<pre><code>var data = {"foo": 1};
+var tpl = eoraptor.compile("{{#this.foo}}like true{{/}}");
+tpl.render(data); 
+// "like true"
+</code></pre>
+
+<p>Demo: To determine whether the <code>if()</code> is <code>true</code>, comparing by <code>===</code>.</p>
+
+<pre><code>var data = {"foo": 1};
+var tpl = eoraptor.compile("{{#this.foo===true}}is true{{/}}");
+tpl.render(data); 
+// "" empty string
+</code></pre>
+
+<h4>
+<a name="else-if-block" class="anchor" href="#else-if-block"><span class="octicon octicon-link"></span></a>else if block:</h4>
+
+<p>START with: <code>{{^anyValue}}</code> / <code>{{^this.key}}</code> / <code>{{^this["key"]}}</code> / <code>{{^anyValue vs anyValue}}</code></p>
+
+<ul>
+<li>anyValue: any value of any types like <code>foo</code>, <code>true</code>, <code>[]</code>, <code>{}</code>, etc.</li>
+<li>key: the direct value of the <code>key</code> in context data.</li>
+<li>vs: available comparation flags contains <code>==</code>, <code>===</code>, <code>!=</code>, <code>!==</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&lt;</code>
+</li>
+</ul><p>END with: <code>{{/}}</code></p>
+
+<p>Demo:</p>
+
+<pre><code>var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
+    "one"+
+"{{^this.number === 2}}"+
+    "two"+
+"{{/}}");
+tpl.render({"number": 2}); 
+// "the number is two"
+</code></pre>
+
+<h4>
+<a name="else-block" class="anchor" href="#else-block"><span class="octicon octicon-link"></span></a>else block:</h4>
+
+<p>START with: <code>{{^}}</code></p>
+
+<p>END with: <code>{{/}}</code></p>
+
+<p>Demo:</p>
+
+<pre><code>var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
+    "one"+
+"{{^}}"+
+    "unknown"+
+"{{/}}");
+tpl.render({}); 
+// "the number is unknown"
+</code></pre>
+
+<h4>
+<a name="iteration-block" class="anchor" href="#iteration-block"><span class="octicon octicon-link"></span></a>iteration block:</h4>
+
+<p><code>{{#this.key currentItem[ currentKey]}}</code></p>
+
+<ul>
+<li>key: required, the direct value of the <code>key</code> in context data.</li>
+<li>currentItem: required, assign a variable to represent the current item in an iterative process.</li>
+<li>currentKey: optional, default to <code>k__</code>, assign a variable to represent the current key in an iterative process. It will be a <code>number</code> value(like 0, 1, 2, etc.) or a <code>string</code> value determined by the iterative object, say, <code>array</code> or <code>object</code>.</li>
+</ul><p>Demo: traversal of an array</p>
+
+<pre><code>var data = {
+    name: "eoraptor",
+    features: [
+        "simple",
+        "standalone"
+    ]
+};
+var tpl = eoraptor.compile("&lt;ul&gt;"+
+    "{{#this.features item key}}"+
+        "&lt;li&gt;{{key}}. {{this.name}} is {{item}}&lt;/li&gt;"+
+    "{{/}}"+
+"&lt;/ul&gt;");
+tpl.render(data); 
+// "&lt;ul&gt;&lt;li&gt;0. eoraptor is simple&lt;/li&gt;&lt;li&gt;1. eoraptor is standalone&lt;/li&gt;&lt;/ul&gt;"
+</code></pre>
+
+<p>Demo: enumerating an object</p>
+
+<pre><code>var data = {
+    features: {
+        "grammer": "simple",
+        "dependency": "standalone"
+    }
+};
+var tpl = eoraptor.compile("&lt;ul&gt;"+
+    "{{#this.features item key}}"+
+        "&lt;li&gt;{{key}}:{{item}}&lt;/li&gt;"+
+    "{{/}}"+
+"&lt;/ul&gt;");
+tpl.render(data); 
+// "&lt;ul&gt;&lt;li&gt;grammer:simple&lt;/li&gt;&lt;li&gt;dependency:standalone&lt;/li&gt;&lt;/ul&gt;"
+</code></pre>
+
+<h4>
+<a name="comment-block" class="anchor" href="#comment-block"><span class="octicon octicon-link"></span></a>comment block</h4>
+
+<p><code>{{!comment}}</code></p>
+
+<ul>
+<li>comment, any word for the commit.</li>
+</ul><p>Demo: </p>
+
+<pre><code>var tpl = eoraptor.compile("{{!hello}}eoraptor.js");
+tpl.render(); // "eoraptor.js"
+</code></pre>
+
+<h4>
+<a name="end-of-a-block" class="anchor" href="#end-of-a-block"><span class="octicon octicon-link"></span></a>end of a block</h4>
+
+<p><code>{{/}}</code></p>
+
+<p>Demo: if - elseif - else - end</p>
+
+<pre><code>var tpl = eoraptor.compile(
+    "{{#this.status === 1}}"+
+        "one"+
+    "{{^this.status === 2}}"+
+        "two"+
+    "{{^}}"+
+        "unknown"+
+    "{{/}}");
+</code></pre>
+
+<h4>
+<a name="partial-template" class="anchor" href="#partial-template"><span class="octicon octicon-link"></span></a>partial template</h4>
+
+<p><code>{{&gt;partialName[ partialContext]}}</code></p>
+
+<ul>
+<li>partialName: required, the name of partial template</li>
+<li>partialContext: optional, the data context for partial template function</li>
+</ul><p>Most of time, each UI compontent in the page is coded 
+by several people, and everyone has the responsibility to keep their code clean, so the <code>key</code> in the partial template may be the same as each other. As you will see in the code lower, both templates, <code>navi</code> and <code>slider</code>, have the <code>list</code> key, so it will not work correctly with a public context data.</p>
+
+<blockquote>
+<p>Unless changing <code>list</code> into <code>naviList</code> and <code>sliderList</code>, but it's clearly violates the reused principle.</p>
+</blockquote>
+
+<p>At this time, we can resolve the <code>key</code> conflict by assignasing an independent context data to partial template when defining a combined one.</p>
+
+<p>Compiling two partial templates for later use, say <code>navi</code> and <code>slider</code>:</p>
+
+<pre><code>eoraptor.compile('navi', '&lt;ul&gt;{{#this.list item}}'+
+    '&lt;li&gt;{{item.text}}&lt;/li&gt;'+
+'{{/}}&lt;/ul&gt;');
+
+eoraptor.compile('slider', '&lt;ul&gt;{{#this.list item}}'+
+    '&lt;li&gt;{{item.img}}&lt;/li&gt;'+
+'{{/}}&lt;/ul&gt;');
+</code></pre>
+
+<p>Below we compile and render a combined template, including two partial templates defined above. </p>
+
+<pre><code>var tpl = eoraptor.compile(
+    '&lt;p&gt;navi:&lt;/p&gt;'+
+    '{{&gt;navi this.navi}}'+
+    '&lt;p&gt;slider:&lt;/p&gt;'+
+    '{{&gt;slider this.slider}}'
+);
+
+tpl.render({
+    navi: {
+        list: [
+            {text: 'foo'}, {text: 'boo'}
+        ]
+    },
+    slider: {
+        list: [
+            {img: '1.jpg'}, {img: '2.jpg'}
+        ]
+    }
+});
+// output:
+//   &lt;p&gt;navi:&lt;/p&gt;
+//   &lt;ul&gt;&lt;li&gt;foo&lt;/li&gt;&lt;li&gt;boo&lt;/li&gt;&lt;/ul&gt;
+//   &lt;p&gt;slider:&lt;/p&gt;
+//   &lt;ul&gt;&lt;li&gt;1.jpg&lt;/li&gt;&lt;li&gt;2.jpg&lt;/li&gt;&lt;/ul&gt;
+</code></pre>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>The JavaScript Templates script is released under the <a href="http://opensource.org/licenses/MIT">MIT license</a>.</p>
+
+<h2>
+<a name="author" class="anchor" href="#author"><span class="octicon octicon-link"></span></a>Author</h2>
+
+<p>@gnosaij / <a href="http://www.joy-studio.com">www.joy-studio.com</a></p>
+
+<h2>
+<a name="updates" class="anchor" href="#updates"><span class="octicon octicon-link"></span></a>Updates</h2>
+
+<ul>
+<li>2014-03-21
+
+<ul>
+<li>initial version 1.0.0</li>
+</ul>
+</li>
+<li>2014-04-01
+
+<ul>
+<li>add eoraptor-jst support</li>
+</ul>
+</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Eoraptor.js maintained by <a href="https://github.com/Jias">Jias</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
