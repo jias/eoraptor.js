@@ -15,7 +15,7 @@ A tiny logic-less, super-easy javascript template engine without any dependence.
 
 ## Unit test
 
-A quick glance at the [unit test](http://jias.github.io/eoraptor.js/test/test.html) maybe the most directly way to dive in.
+A quick glance at the [unit test](http://jias.github.io/eoraptor.js/test/test.html) maybe the most direct way to dive in.
 
 ## Overview
 
