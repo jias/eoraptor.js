@@ -46,6 +46,11 @@
 <li>More useful partial template than <code>mustache</code>.</li>
 <li>Matching <a href="https://www.npmjs.org/package/eoraptor-jst">eoraptor-jst</a> tool in npm package.</li>
 </ol><h2>
+<a name="unit-test" class="anchor" href="#unit-test"><span class="octicon octicon-link"></span></a>Unit test</h2>
+
+<p>A quick glance at the <a href="http://jias.github.io/eoraptor.js/test/test.html">unit test</a> maybe the most direct way to dive in.</p>
+
+<h2>
 <a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h2>
 
 <h4>
@@ -154,6 +159,48 @@ tpl(data);
 var tpl = eoraptor.compile('&lt;%this.name%&gt;');
 tpl({"name": "eoraptor.js"});
 // "eoraptor.js"
+</code></pre>
+
+<h4>
+<a name="initailizing-complex-templates-from-script-tags-and-caching-them" class="anchor" href="#initailizing-complex-templates-from-script-tags-and-caching-them"><span class="octicon octicon-link"></span></a>Initailizing complex templates from script tags and caching them</h4>
+
+<p><code>eoraptor.query()</code></p>
+
+<p>Demo:</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+    &lt;script src="path/to/eoraptor.js"&gt;&lt;/script&gt;
+    &lt;script id="t1" type="text/html"&gt;
+    &lt;ul&gt;
+        {{#this.book item key}}
+            &lt;li&gt;{{key}}:{{item}}&lt;/li&gt;
+        {{/}}
+    &lt;/ul&gt;
+    &lt;/script&gt;
+    &lt;script&gt;
+        eoraptor.query();
+        eoraptor.t1({
+            book: {
+                author: 'tim',
+                price: '$9.00'
+            }
+        });
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>After calling the <code>query</code>, the script tag will be added a <code>compiled</code> attribute, so it would be ignored in next calling.</p>
+
+<pre><code>&lt;script id="t1" type="text/html" compiled="1"&gt;
+&lt;ul&gt;
+    {{#this.book item key}}
+        &lt;li&gt;{{key}}:{{item}}&lt;/li&gt;
+    {{/}}
+&lt;/ul&gt;
+&lt;/script&gt;
 </code></pre>
 
 <h2>
@@ -411,16 +458,23 @@ tpl.render({
 <a name="updates" class="anchor" href="#updates"><span class="octicon octicon-link"></span></a>Updates</h2>
 
 <ul>
-<li>2014-03-21
+<li>2014-04-03
 
 <ul>
-<li>initial version 1.0.0</li>
+<li>version 1.1.0</li>
+<li>add <code>query</code> method</li>
 </ul>
 </li>
 <li>2014-04-01
 
 <ul>
-<li>add eoraptor-jst support</li>
+<li>add <code>eoraptor-jst</code> support</li>
+</ul>
+</li>
+<li>2014-03-21
+
+<ul>
+<li>initial version 1.0.0</li>
 </ul>
 </li>
 </ul>
