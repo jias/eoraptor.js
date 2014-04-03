@@ -116,6 +116,45 @@ Demo:
     tpl({"name": "eoraptor.js"});
     // "eoraptor.js"
 
+#### Initailizing complex templates from script tags and caching them
+
+`eoraptor.query()`
+
+Demo:
+
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <script src="path/to/eoraptor.js"></script>
+        <script id="t1" type="text/html">
+        <ul>
+            {{#this.book item key}}
+                <li>{{key}}:{{item}}</li>
+            {{/}}
+        </ul>
+        </script>
+        <script>
+            eoraptor.query();
+            eoraptor.t1({
+                book: {
+                    author: 'tim',
+                    price: '$9.00'
+                }
+            });
+        </script>
+    </body>
+    </html>
+
+After calling the `query`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
+
+    <script id="t1" type="text/html" compiled="1">
+    <ul>
+        {{#this.book item key}}
+            <li>{{key}}:{{item}}</li>
+        {{/}}
+    </ul>
+    </script>
+
 ## Template
 
 #### variable
@@ -345,9 +384,14 @@ The JavaScript Templates script is released under the [MIT license](http://opens
 
 @gnosaij / [www.joy-studio.com](http://www.joy-studio.com)
 
+
 ## Updates
 
+* 2014-04-03
+  - version 1.1.0
+  - add `query` method
+* 2014-04-01
+  - add `eoraptor-jst` support
 * 2014-03-21
   - initial version 1.0.0
-* 2014-04-01
-  - add eoraptor-jst support
+

@@ -62,7 +62,7 @@ describe('usage test', function () {
     var ec = eoraptor.compile;
 
     beforeEach(function () {
-        eoraptor.cache = {};
+        // eoraptor.cache = {};
     });
 
     // afterEach(function () {
@@ -73,6 +73,12 @@ describe('usage test', function () {
         var tpl = ec('eoraptor.js');
         // console.log(tpl.source);
         expect(tpl.render({})).to.be('eoraptor.js');
+    });
+
+    it('eoraptor.foo.source', function(){
+        var fooTpl = ec('foo', 'eoraptor.js');
+        // console.log(tpl.source);
+        expect(fooTpl.source).to.be(eoraptor.foo.source);
     });
 
     it(' eoraptor.js ', function(){
@@ -429,6 +435,7 @@ describe('usage test', function () {
         // console.log(tpl.source);
 
         expect(tpl.render(data)).to.be('<p>navi:</p><ul><li>foo</li><li>boo</li></ul><p>slider:</p><ul><li>1.jpg</li><li>2.jpg</li></ul>');
+        
     });
 
     it('<%this.name%>', function(){
@@ -439,5 +446,28 @@ describe('usage test', function () {
         eoraptor.setDelimiter();
     });
 
+    it('function(){{{code}}}', function(){
+        // 连续出现了多次'{', 应该正确的识别出靠内的表达式{{code}}
+        var tpl = ec('function(){'+
+            '{{this.code}}'+
+        '}');
+        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[];r__.push("function(){");r__.push(t__.code);r__.push("}");return r__.join("");}');
+    });
+
+    it('function(){{code}}', function(){
+        // 连续出现了多次'{', 应该正确的识别出靠内的表达式{{code}}
+        eoraptor.setDelimiter('{', '}');
+        var tpl = ec('function(){'+
+            '{this.code}'+
+        '}');
+        eoraptor.setDelimiter();
+        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[];r__.push("function(){");r__.push(t__.code);r__.push("}");return r__.join("");}');
+    });
+
+    it('query from script', function(){
+        eoraptor.query();
+        expect(typeof eoraptor.t1).to.be('function');
+        expect(typeof eoraptor.t2).to.be('function');
+    });
 });
 
