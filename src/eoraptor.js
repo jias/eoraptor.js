@@ -10,14 +10,14 @@
  */
 (function(glob) {
 
-var delimiterReg = /\{\{\s*(.+?)\s*\}\}/g;
+var delimiterReg = /\{(?!\{\{)\{\s*(.+?)\s*\}\}/g;
 
 var eoraptor = {
     name: 'eoraptor.js',
-    version: '1.0.0',
+    version: '1.1.0',
     compile: compile,
-    escape: ee,
-    cache: {},
+    escape: escaper,
+    query: query,
     setDelimiter: setDelimiter
 };
 
@@ -26,12 +26,18 @@ var thisReg = /\bthis\b/g,
     flags = '#^/@!>',
     eachReg = /^t__(.+?)\s(\w+)\s?(\w+)?.*$/, // see unit test
     escapeReg = /[&<>"']/g,
+    empty = '',
     escapeMap = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#x27;'
+    },
+    trim = empty.trim ? function (str) {
+        return str.trim();
+    } : function (str) {
+        return str.replace(/^\s+/, empty).replace(/\s+$/, empty);
     };
 
 function compile() {
@@ -44,8 +50,8 @@ function compile() {
         tpl = args[1];
     }
 
-    if (eoraptor.cache[name]) {
-        return eoraptor.cache[name];
+    if (eoraptor[name]) {
+        return eoraptor[name];
     }
 
     var match = null,
@@ -60,7 +66,7 @@ function compile() {
 
     code += parseString(tpl.substr(pos, tpl.length - pos));
 
-    code = (code + 'return r__.join("");');//.replace(/[\r\t\n]/g, '');
+    code = (code + 'return r__.join("");');//.replace(/[\r\t\n]/g, empty);
 
     var render = function (data) {
         var result;
@@ -76,42 +82,58 @@ function compile() {
 
     render.render = render;
     render.source = 'function (data) {\n' + code + '\n}';
-    return eoraptor.cache[name] = render;
+    return eoraptor[name] = render;
 } // compile
 
+var squareBracketReg = /[\[\]]/g,
+    quoteContentReg = /(?:"(.*?)")/g,
+    quoteContentReg2 = /(?:'(.*?)')/g,
+    squareBracketAndContentReg = /(\[.*?\])/g,
+    parenthesesAndContentReg = /(\(.*?\))/g,
+    ifReg = /^[^\s]+\s*([!=><]{1,3}\s*[^\s]+)?$/,
+    squareBracketRemover = function (all, match) {
+        return match.replace(squareBracketReg, empty);
+    }
+
+// console.log(isIf('a("ab==0")')); => true
+// console.log(isIf("a['[122 '] === b[ '55]' ]")); => true
+// step1. delete '[' and ']' between "" and ''
+// step2. delete '[xxx]'
+// step3. delete '(xxx)'
 function isIf (str) {
-    // "a['[122 '] === b[ '55]' ]" => "a === b"
-    // 1) delete '[' and ']' between "" and ''
-    // 2) delete '[xxx]'
-    var noBracketStr = str.replace(/(?:"(.*?)")/g, function (all, m) {
-        return m.replace(/[\[\]]/g, '');
-    }).replace(/(?:'(.*?)')/g, function (all, m) {
-        return m.replace(/[\[\]]/g, '');
-    }).replace(/(\[.*?\])/g, '');
-    return /^[^\s]+\s*([!=><]{1,3}\s*[^\s]+)?$/.test(noBracketStr);
+    str = str.replace(quoteContentReg, squareBracketRemover)
+        .replace(quoteContentReg2, squareBracketRemover)
+        .replace(squareBracketAndContentReg, empty)
+        .replace(parenthesesAndContentReg, empty);
+    return ifReg.test(str);
 }
 
 function setDelimiter(start, end) {
     start = start || '{{';
     end = end || '}}';
-    delimiterReg = new RegExp(escapeDelimiter(start) + 
-    '\\s*(.+?)\\s*' + escapeDelimiter(end), 'g')
+    delimiterReg = new RegExp(
+        escapeDelimiter(start.charAt(0))+ 
+        '(?!'+escapeDelimiter(start)+')'+
+        escapeDelimiter(start.substr(1))+ 
+        '\\s*(.+?)\\s*'+ 
+        escapeDelimiter(end)
+    , 'g');
 }
 
-// thanks mustache.js
+// from mustache.js
 function escapeDelimiter(str) {
     return str.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
 }
 
-// replacer callback for ee
-function rr(match) {
+// replacer callback for escaper
+function escapeCallback(match) {
     return escapeMap[match];
 }
 
 // escape html chars
 // NOTE: 'escape' is reserved word in javascript
-function ee(string) {
-    return string == null ? '' : ''+string.replace(escapeReg, rr);
+function escaper(string) {
+    return string == null ? empty : empty + string.replace(escapeReg, escapeCallback);
 }
 
 function parseJS(str) {
@@ -125,7 +147,7 @@ function parseJS(str) {
         return 'r__.push(' + str + ');\n';
     } 
 
-    var code = '';
+    var code = empty;
 
     // @foo => foo
     str = str.substr(1);
@@ -159,7 +181,7 @@ function parseJS(str) {
         case '>':
             code = str.replace(/^(\w+)\s(.+)$/, function (all, name, data) {
                 name = name.indexOf('-') > -1 ? '["'+name+'"]' : '.'+name;
-                return 'r__.push(eoraptor.cache'+name+'.render('+data+'));\n';
+                return 'r__.push(eoraptor'+name+'.render('+data+'));\n';
             });
             break;
         case '!':
@@ -171,7 +193,20 @@ function parseJS(str) {
 }
 
 function parseString (str) {
-    return str != '' ? 'r__.push("' + str.replace(/"/g, '\\"') + '");\n' : '';
+    return str != empty ? 'r__.push("' + str.replace(/"/g, '\\"') + '");\n' : empty;
+}
+
+// get templates from the script tags in document.
+function query() {
+    var scripts = document.getElementsByTagName('script'),
+        script;
+    for (var i = 0, l = scripts.length; i < l; i++) {
+        script = scripts[i];
+        if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/html') {
+            compile(script.id, trim(script.innerHTML));
+            script.setAttribute('compiled','1');
+        }
+    }
 }
 
 (typeof module != 'undefined' && module.exports) ?
