@@ -22,7 +22,8 @@
     "grunt-contrib-uglify": "latest",
     "grunt-contrib-watch": "latest",
     "expect.js": "*",
-    "mocha": "*"
+    "mocha": "*",
+    "grunt-text-replace": "~0.3.11"
   },
   "readmeFilename": "README.md"
 }
