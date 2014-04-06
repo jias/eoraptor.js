@@ -31,7 +31,7 @@
           <h1>
 <a name="eoraptorjs" class="anchor" href="#eoraptorjs"><span class="octicon octicon-link"></span></a>eoraptor.js</h1>
 
-<p>A tiny logic-less, super-easy javascript template engine without any dependence.</p>
+<p>A tiny, super-easy javascript template engine without any dependence.</p>
 
 <h2>
 <a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
@@ -42,7 +42,7 @@
 <li>More detailed error logging.</li>
 <li>Build-in <code>index</code> support when iterating an array.</li>
 <li>Build-in <code>else if</code> support.</li>
-<li>TODO: Customizable output filter plugin(0%).</li>
+<li>TODO: Customizable output filter plugin.</li>
 <li>More useful partial template than <code>mustache</code>.</li>
 <li>Matching <a href="https://www.npmjs.org/package/eoraptor-jst">eoraptor-jst</a> tool in npm package.</li>
 </ol><h2>
@@ -164,7 +164,7 @@ tpl({"name": "eoraptor.js"});
 <h4>
 <a name="initailizing-complex-templates-from-script-tags-and-caching-them" class="anchor" href="#initailizing-complex-templates-from-script-tags-and-caching-them"><span class="octicon octicon-link"></span></a>Initailizing complex templates from script tags and caching them</h4>
 
-<p><code>eoraptor.query()</code></p>
+<p><code>eoraptor.extract()</code></p>
 
 <p>Demo:</p>
 
@@ -180,7 +180,7 @@ tpl({"name": "eoraptor.js"});
     &lt;/ul&gt;
     &lt;/script&gt;
     &lt;script&gt;
-        eoraptor.query();
+        eoraptor.extract();
         eoraptor.t1({
             book: {
                 author: 'tim',
@@ -192,7 +192,7 @@ tpl({"name": "eoraptor.js"});
 &lt;/html&gt;
 </code></pre>
 
-<p>After calling the <code>query</code>, the script tag will be added a <code>compiled</code> attribute, so it would be ignored in next calling.</p>
+<p>After calling the <code>extract</code>, the script tag will be added a <code>compiled</code> attribute, so it would be ignored in next calling.</p>
 
 <pre><code>&lt;script id="t1" type="text/html" compiled="1"&gt;
 &lt;ul&gt;
@@ -462,7 +462,7 @@ tpl.render({
 
 <ul>
 <li>version 1.1.0</li>
-<li>add <code>query</code> method</li>
+<li>add <code>extract</code> method</li>
 </ul>
 </li>
 <li>2014-04-01
