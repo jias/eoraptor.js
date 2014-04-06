@@ -9,7 +9,7 @@ A tiny, super-easy javascript template engine without any dependence.
 1. More detailed error logging.
 1. Build-in `index` support when iterating an array.
 2. Build-in `else if` support.
-1. TODO: Customizable output filter plugin(0%).
+1. TODO: Customizable output filter plugin.
 1. More useful partial template than `mustache`.
 1. Matching [eoraptor-jst](https://www.npmjs.org/package/eoraptor-jst) tool in npm package.
 
@@ -118,7 +118,7 @@ Demo:
 
 #### Initailizing complex templates from script tags and caching them
 
-`eoraptor.query()`
+`eoraptor.extract()`
 
 Demo:
 
@@ -134,7 +134,7 @@ Demo:
         </ul>
         </script>
         <script>
-            eoraptor.query();
+            eoraptor.extract();
             eoraptor.t1({
                 book: {
                     author: 'tim',
@@ -145,7 +145,7 @@ Demo:
     </body>
     </html>
 
-After calling the `query`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
+After calling the `extract`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
 
     <script id="t1" type="text/html" compiled="1">
     <ul>
@@ -389,7 +389,7 @@ The JavaScript Templates script is released under the [MIT license](http://opens
 
 * 2014-04-03
   - version 1.1.0
-  - add `query` method
+  - add `extract` method
 * 2014-04-01
   - add `eoraptor-jst` support
 * 2014-03-21

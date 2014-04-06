@@ -16,7 +16,7 @@ var eoraptor = {
     version: '1.1.0',
     compile: compile,
     escape: escaper,
-    query: query,
+    extract: extract,
     setDelimiter: setDelimiter
 };
 
@@ -196,12 +196,12 @@ function parseString (str) {
 }
 
 // get templates from the script tags in document.
-function query() {
+function extract() {
     var scripts = document.getElementsByTagName('script'),
         script;
     for (var i = 0, l = scripts.length; i < l; i++) {
         script = scripts[i];
-        if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/html') {
+        if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/x-eoraptor') {
             compile(script.id, trim(script.innerHTML));
             script.setAttribute('compiled','1');
         }
