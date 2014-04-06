@@ -464,8 +464,8 @@ describe('usage test', function () {
         expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[];r__.push("function(){");r__.push(t__.code);r__.push("}");return r__.join("");}');
     });
 
-    it('query from script', function(){
-        eoraptor.query();
+    it('extract from script', function(){
+        eoraptor.extract();
         expect(typeof eoraptor.t1).to.be('function');
         expect(typeof eoraptor.t2).to.be('function');
     });

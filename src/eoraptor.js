@@ -1,12 +1,11 @@
-/*
- * @module eoraptor
- * @author gnosaij <http://www.joy-studio.com>
- * @idea http://www.joy-studio.com/javascript/my-eoraptorjs-template-engine-in-javascript.
- * @references
- *   1. http://ejohn.org/blog/javascript-micro-templating/
- *   2. http://krasimirtsonev.com/blog/article/Javascript-template-engine-in-just-20-line
- *   3. https://github.com/janl/mustache.js/
- *   4. http://www.yajet.net/yajet/doc/yajet.html
+/**!
+ * eoraptor.js
+ * Copyright (c) 2014 gnosaij
+ * Licensed under MIT (https://github.com/Jias/eoraptor.js/blob/master/LICENSE)
+ * A tiny super-easy javascript template engine without any dependence.
+ * @author gnosaij | http://jias.github.io | http://www.joy-studio.com
+ * @version #VERSION#
+ * @link http://www.joy-studio.com/javascript/my-eoraptorjs-template-engine-in-javascript.html
  */
 (function(glob) {
 
@@ -17,7 +16,7 @@ var eoraptor = {
     version: '1.1.0',
     compile: compile,
     escape: escaper,
-    query: query,
+    extract: extract,
     setDelimiter: setDelimiter
 };
 
@@ -197,12 +196,12 @@ function parseString (str) {
 }
 
 // get templates from the script tags in document.
-function query() {
+function extract() {
     var scripts = document.getElementsByTagName('script'),
         script;
     for (var i = 0, l = scripts.length; i < l; i++) {
         script = scripts[i];
-        if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/html') {
+        if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/x-eoraptor') {
             compile(script.id, trim(script.innerHTML));
             script.setAttribute('compiled','1');
         }
