@@ -1,6 +1,6 @@
 # eoraptor.js
 
-A tiny, super-easy javascript template engine without any dependence.
+A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.
 
 ## Features
 
@@ -8,7 +8,7 @@ A tiny, super-easy javascript template engine without any dependence.
 1. Without `with` statement in compiled function, recognized performance problems will be shielded.
 1. More detailed error logging.
 1. Build-in `index` support when iterating an array.
-2. Build-in `else if` support.
+1. Build-in `else if` support.
 1. TODO: Customizable output filter plugin.
 1. More useful partial template than `mustache`.
 1. Matching [eoraptor-jst](https://www.npmjs.org/package/eoraptor-jst) tool in npm package.
@@ -17,64 +17,79 @@ A tiny, super-easy javascript template engine without any dependence.
 
 A quick glance at the [unit test](http://jias.github.io/eoraptor.js/test/test.html) maybe the most direct way to dive in.
 
-## Overview
+## Usage
 
-#### Base
+#### Client-side
 
-Compiling and rendering in browser runtime:
+Including the eoraptor engine by script tag.
 
-Demo: 
+```html
+<script src="path/to/eoraptor.min.js"></script>
+```
 
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <script src="path/to/eoraptor.js"></script>
-        <script>
-            var helloTplFn = eoraptor.compile("Hello {{this.name}}!");
-            console.log(helloTplFn({"name": "world"}));
-            console.log(helloTplFn.source);
-        </script>
-    </body>
-    </html>
+Let's begin with the classic `hello world` example achieved through a variety of ways.
 
-#### Advanced
+###### Method 1：Compiling a template from a string parameter.
 
-Rendering directly with the template function that has been pre-compiled before. 
+```js
+var hw = eoraptor.compile("Hello {{this.name}}!");
+hw({"name": "world"});
+// "Hello world!"
+```
+Usually, this method is more suitable for compiling a pretty simple template.
 
-Demo: 
+###### Method 2：Compiling templates from the script tags, with type `text/x-eoraptor` and a unique `id` property.
 
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <script src="path/to/eoraptor.js"></script>
-        <script src="path/to/eoraptor.render.js"></script>
-        <script>
-            console.log(eoraptor.helloTplFn({"name": "world"}));
-        </script>
-    </body>
-    </html>
+```html
+<script type="text/x-eoraptor" id="hw">
+Hello {{this.name}}!
+</script>
+<script>
+eoraptor.extract();
+eoraptor.hw({"name": "world"});
+// "Hello world!"
+</script>
+```
+
+###### Method 3: Rendering directly with the template function that has been pre-compiled before.
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+    <script src="path/to/eoraptor.js"></script>
+    <script src="path/to/eoraptor.render.js"></script>
+    <script>
+        console.log(eoraptor.helloTplFn({"name": "world"}));
+    </script>
+</body>
+</html>
+```
 
 The name of `eoraptor.render.js` file would be any other word as you like when pre-compile building in nodejs, and the content in it would look like this:
 
-    // content in eoraptor.render.js
-    (function () {
-        var eo = eoraptor;
-        eo.helloTplFn = function (data){
-            var t__=data, r__=[];
-            r__.push("Hello ");
-            r__.push(t__.name);
-            r__.push("!");
-            return r__.join("");
-        };
-        // other pre-compiled function
-        // ...
-    });
-    
+```js
+// content in eoraptor.render.js
+(function () {
+    var eo = eoraptor;
+    eo.helloTplFn = function (data){
+        var t__=data, r__=[];
+        r__.push("Hello ");
+        r__.push(t__.name);
+        r__.push("!");
+        return r__.join("");
+    };
+    // other pre-compiled function
+    // ...
+});
+```
+
 The `key` of a render template is get from the template file's name.
 
-    // content in helloTplFn.js
-    Hello {{this.name}}!
-
+```js
+// content in helloTplFn.js
+Hello {{this.name}}!
+```
 
 ## API
 
@@ -83,24 +98,28 @@ The `key` of a render template is get from the template file's name.
 `eoraptor.compile(template)` / `eoraptor.compile(name, template)`
 
 * template: the template string.
-* name: the name will be used as the `key` of eorapter.cache. 
+* name: the name will be used as the `key` of eorapter.cache.
 
 The method returns an `template function` with two properties:
 
-    function render(data) {...};
-    render.render = render;
-    render.source = 'function(data) {...}';
-    return render;
+```js
+function render(data) {...};
+render.render = render;
+render.source = 'function(data) {...}';
+return render;
+```
 
 The `render` function(and it's `render` method) is a compiled template function which takes one parameter as the context data. The `source` is only the string form of the `render` function, used by the pre-compile tool.
 
 Demo:
 
-    var tpl = eoraptor.compile('...');
-    // method 1
-    tpl.render(data);
-    // method 2
-    tpl(data);
+```js
+var tpl = eoraptor.compile('...');
+// method 1
+tpl.render(data);
+// method 2
+tpl(data);
+```
 
 #### Setting delimeter
 
@@ -111,10 +130,12 @@ Demo:
 
 Demo:
 
-    eoraptor.setDelimiter('<%', '%>');
-    var tpl = eoraptor.compile('<%this.name%>');
-    tpl({"name": "eoraptor.js"});
-    // "eoraptor.js"
+```js
+eoraptor.setDelimiter('<%', '%>');
+var tpl = eoraptor.compile('<%this.name%>');
+tpl({"name": "eoraptor.js"});
+// "eoraptor.js"
+```
 
 #### Initailizing complex templates from script tags and caching them
 
@@ -122,38 +143,42 @@ Demo:
 
 Demo:
 
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <script src="path/to/eoraptor.js"></script>
-        <script id="t1" type="text/html">
-        <ul>
-            {{#this.book item key}}
-                <li>{{key}}:{{item}}</li>
-            {{/}}
-        </ul>
-        </script>
-        <script>
-            eoraptor.extract();
-            eoraptor.t1({
-                book: {
-                    author: 'tim',
-                    price: '$9.00'
-                }
-            });
-        </script>
-    </body>
-    </html>
-
-After calling the `extract`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
-
-    <script id="t1" type="text/html" compiled="1">
+```js
+<!DOCTYPE html>
+<html>
+<body>
+    <script src="path/to/eoraptor.js"></script>
+    <script id="t1" type="text/html">
     <ul>
         {{#this.book item key}}
             <li>{{key}}:{{item}}</li>
         {{/}}
     </ul>
     </script>
+    <script>
+        eoraptor.extract();
+        eoraptor.t1({
+            book: {
+                author: 'tim',
+                price: '$9.00'
+            }
+        });
+    </script>
+</body>
+</html>
+```
+
+After calling the `extract`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
+
+```js
+<script id="t1" type="text/html" compiled="1">
+<ul>
+    {{#this.book item key}}
+        <li>{{key}}:{{item}}</li>
+    {{/}}
+</ul>
+</script>
+```
 
 ## Template
 
@@ -165,33 +190,37 @@ After calling the `extract`, the script tag will be added a `compiled` attribute
 
 > Under the hood, the function returned by `eoraptor.compile()` is builded without `with` statement, so the expression needs to start with `this.` prefix and it will not throw errors like `underscore`.
 
-Demo: output the value of the `key` in context data. 
+Demo: output the value of the `key` in context data.
 
-    var tpl = eoraptor.compile("{{this.name}}");
-    tpl.render({"name": "eoraptor.js"}); 
-    // "eoraptor.js"
+```js
+var tpl = eoraptor.compile("{{this.name}}");
+tpl.render({"name": "eoraptor.js"});
+// "eoraptor.js"
+```
 
 Demo: if there is no such `key` in context data.
 
-    var tpl = eoraptor.compile("{{this.name}}");
-    tpl.render({}); 
-    // "" empty string
+```js
+var tpl = eoraptor.compile("{{this.name}}");
+tpl.render({});
+// "" empty string
+```
 
-
-#### html-escaped variable: 
+#### html-escaped variable:
 
 `{{@this.key}}` / `{{@this["key"]}}`
 
 * key: required, the direct value of the `key` in context data.
 
-demo: output the html-escaped value of the `key` in context data. 
+demo: output the html-escaped value of the `key` in context data.
 
-    var tpl = eoraptor.compile("{{@this.name}}");
-    tpl.render({"name": "<h1> eoraptor.js </h1>"}); 
-    // "&lt;h1&gt; eoraptor.js &lt;/h1&gt;"
+```js
+var tpl = eoraptor.compile("{{@this.name}}");
+tpl.render({"name": "<h1> eoraptor.js </h1>"});
+// "&lt;h1&gt; eoraptor.js &lt;/h1&gt;"
+```
 
-
-#### if block: 
+#### if block:
 
 START with: `{{#anyValue}}` / `{{#this.key}}` / `{{#this["key"]}}` / `{{#anyValue vs anyValue}}`
 
@@ -203,20 +232,23 @@ END with: `{{/}}`
 
 Demo: To determine whether the `if()` is like `true`, comparing by `==`.
 
-    var data = {"foo": 1};
-    var tpl = eoraptor.compile("{{#this.foo}}like true{{/}}");
-    tpl.render(data); 
-    // "like true"
+```js
+var data = {"foo": 1};
+var tpl = eoraptor.compile("{{#this.foo}}like true{{/}}");
+tpl.render(data);
+// "like true"
+```
 
 Demo: To determine whether the `if()` is `true`, comparing by `===`.
 
-    var data = {"foo": 1};
-    var tpl = eoraptor.compile("{{#this.foo===true}}is true{{/}}");
-    tpl.render(data); 
-    // "" empty string
+```js
+var data = {"foo": 1};
+var tpl = eoraptor.compile("{{#this.foo===true}}is true{{/}}");
+tpl.render(data);
+// "" empty string
+```
 
-    
-#### else if block: 
+#### else if block:
 
 START with: `{{^anyValue}}` / `{{^this.key}}` / `{{^this["key"]}}` / `{{^anyValue vs anyValue}}`
 
@@ -228,16 +260,17 @@ END with: `{{/}}`
 
 Demo:
 
-    var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
-        "one"+
-    "{{^this.number === 2}}"+
-        "two"+
-    "{{/}}");
-    tpl.render({"number": 2}); 
-    // "the number is two"
+```js
+var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
+    "one"+
+"{{^this.number === 2}}"+
+    "two"+
+"{{/}}");
+tpl.render({"number": 2});
+// "the number is two"
+```
 
-
-#### else block: 
+#### else block:
 
 START with: `{{^}}`
 
@@ -245,16 +278,17 @@ END with: `{{/}}`
 
 Demo:
 
-    var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
-        "one"+
-    "{{^}}"+
-        "unknown"+
-    "{{/}}");
-    tpl.render({}); 
-    // "the number is unknown"
+```js
+var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
+    "one"+
+"{{^}}"+
+    "unknown"+
+"{{/}}");
+tpl.render({});
+// "the number is unknown"
+```
 
-
-#### iteration block: 
+#### iteration block:
 
 `{{#this.key currentItem[ currentKey]}}`
 
@@ -264,20 +298,22 @@ Demo:
 
 Demo: traversal of an array
 
-    var data = {
-        name: "eoraptor",
-        features: [
-            "simple",
-            "standalone"
-        ]
-    };
-    var tpl = eoraptor.compile("<ul>"+
-        "{{#this.features item key}}"+
-            "<li>{{key}}. {{this.name}} is {{item}}</li>"+
-        "{{/}}"+
-    "</ul>");
-    tpl.render(data); 
-    // "<ul><li>0. eoraptor is simple</li><li>1. eoraptor is standalone</li></ul>"
+```js
+var data = {
+    name: "eoraptor",
+    features: [
+        "simple",
+        "standalone"
+    ]
+};
+var tpl = eoraptor.compile("<ul>"+
+    "{{#this.features item key}}"+
+        "<li>{{key}}. {{this.name}} is {{item}}</li>"+
+    "{{/}}"+
+"</ul>");
+tpl.render(data);
+// "<ul><li>0. eoraptor is simple</li><li>1. eoraptor is standalone</li></ul>"
+```
 
 Demo: enumerating an object
 
@@ -302,18 +338,19 @@ Demo: enumerating an object
 
 * comment, any word for the commit.
 
-Demo: 
+Demo:
 
     var tpl = eoraptor.compile("{{!hello}}eoraptor.js");
     tpl.render(); // "eoraptor.js"
 
    
-#### end of a block 
+#### end of a block
 
 `{{/}}`
 
 Demo: if - elseif - else - end
 
+```js
     var tpl = eoraptor.compile(
         "{{#this.status === 1}}"+
             "one"+
@@ -322,59 +359,61 @@ Demo: if - elseif - else - end
         "{{^}}"+
             "unknown"+
         "{{/}}");
+```
 
-
-#### partial template 
+#### partial template
 
 `{{>partialName[ partialContext]}}`
 
 * partialName: required, the name of partial template
 * partialContext: optional, the data context for partial template function
 
-Most of time, each UI compontent in the page is coded 
-by several people, and everyone has the responsibility to keep their code clean, so the `key` in the partial template may be the same as each other. As you will see in the code lower, both templates, `navi` and `slider`, have the `list` key, so it will not work correctly with a public context data.
+Most of time, each UI compontent in the page is coded by several people, and everyone has the responsibility to keep their code clean, so the `key` in the partial template may be the same as each other. As you will see in the code lower, both templates, `navi` and `slider`, have the `list` key, so it will not work correctly with a public context data.
 
 > Unless changing `list` into `naviList` and `sliderList`, but it's clearly violates the reused principle.
 
 At this time, we can resolve the `key` conflict by assignasing an independent context data to partial template when defining a combined one.
-    
+
 Compiling two partial templates for later use, say `navi` and `slider`:
 
-    eoraptor.compile('navi', '<ul>{{#this.list item}}'+
-        '<li>{{item.text}}</li>'+
-    '{{/}}</ul>');
-    
-    eoraptor.compile('slider', '<ul>{{#this.list item}}'+
-        '<li>{{item.img}}</li>'+
-    '{{/}}</ul>');
+```js
+eoraptor.compile('navi', '<ul>{{#this.list item}}'+
+    '<li>{{item.text}}</li>'+
+'{{/}}</ul>');
 
-Below we compile and render a combined template, including two partial templates defined above. 
+eoraptor.compile('slider', '<ul>{{#this.list item}}'+
+    '<li>{{item.img}}</li>'+
+'{{/}}</ul>');
+```
 
-    var tpl = eoraptor.compile(
-        '<p>navi:</p>'+
-        '{{>navi this.navi}}'+
-        '<p>slider:</p>'+
-        '{{>slider this.slider}}'
-    );
-        
-    tpl.render({
-        navi: {
-            list: [
-                {text: 'foo'}, {text: 'boo'}
-            ]
-        },
-        slider: {
-            list: [
-                {img: '1.jpg'}, {img: '2.jpg'}
-            ]
-        }
-    });
-    // output:
-    //   <p>navi:</p>
-    //   <ul><li>foo</li><li>boo</li></ul>
-    //   <p>slider:</p>
-    //   <ul><li>1.jpg</li><li>2.jpg</li></ul>
+Below we compile and render a combined template, including two partial templates defined above.
 
+```js
+var tpl = eoraptor.compile(
+    '<p>navi:</p>'+
+    '{{>navi this.navi}}'+
+    '<p>slider:</p>'+
+    '{{>slider this.slider}}'
+);
+
+tpl.render({
+    navi: {
+        list: [
+            {text: 'foo'}, {text: 'boo'}
+        ]
+    },
+    slider: {
+        list: [
+            {img: '1.jpg'}, {img: '2.jpg'}
+        ]
+    }
+});
+// output:
+//   <p>navi:</p>
+//   <ul><li>foo</li><li>boo</li></ul>
+//   <p>slider:</p>
+//   <ul><li>1.jpg</li><li>2.jpg</li></ul>
+```
 
 ## License
 
