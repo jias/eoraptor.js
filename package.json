@@ -1,14 +1,15 @@
 {
   "name": "eoraptor.js",
-  "version": "1.0.1",
-  "description": "A tiny logic-less, super-easy javascript template engine without any dependence.",
+  "version": "0.1.1",
+  "description": "A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.",
   "homepage": "http://jias.github.io/eoraptor.js/",
   "main": "src/eoraptor.js",
   "scripts": {},
   "keywords": [
     "javascript",
     "template",
-    "jst"
+    "jst",
+    "eoraptor"
   ],
   "author": {
     "name": "gnosaij",
@@ -18,9 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "grunt-cli": "latest",
-    "grunt-contrib-concat": "latest",
     "grunt-contrib-uglify": "latest",
-    "grunt-contrib-watch": "latest",
     "expect.js": "*",
     "mocha": "*",
     "grunt-text-replace": "~0.3.11"

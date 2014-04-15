@@ -27,7 +27,7 @@ Including the eoraptor engine by script tag.
 <script src="path/to/eoraptor.min.js"></script>
 ```
 
-Let's begin with the classic `hello world` example achieved through a variety of ways.
+The classic `hello world` example achieved through a variety of ways.
 
 ###### Method 1：Compiling a template from a string parameter.
 
@@ -38,7 +38,7 @@ hw({"name": "world"});
 ```
 Usually, this method is more suitable for compiling a pretty simple template.
 
-###### Method 2：Compiling templates from the script tags, with type `text/x-eoraptor` and a unique `id` property.
+###### Method 2：Compiling templates from the script tags, with a `text/x-eoraptor` type and an unique `id` property.
 
 ```html
 <script type="text/x-eoraptor" id="hw">
@@ -51,74 +51,92 @@ eoraptor.hw({"name": "world"});
 </script>
 ```
 
-###### Method 3: Rendering directly with the template function that has been pre-compiled before.
+###### Method 3: Including the precompiled file which contains all template functions and rendering directly without calling`eoraptor.compile()` or `exraptor.extract()` api.
 
 ```html
-<!DOCTYPE html>
-<html>
-<body>
-    <script src="path/to/eoraptor.js"></script>
-    <script src="path/to/eoraptor.render.js"></script>
-    <script>
-        console.log(eoraptor.helloTplFn({"name": "world"}));
-    </script>
-</body>
+<script src="path/to/eoraptor-precompiled.js"></script>
+<script>
+eoraptor.hw({"name": "world"});
+</script>
 </html>
 ```
 
-The name of `eoraptor.render.js` file would be any other word as you like when pre-compile building in nodejs, and the content in it would look like this:
+The name of `eoraptor-precompiled.js` file and the namespace of all templaltes，`eoraptor` in the example above, would be any other word as you like(a declaration in options of pre-compiling tool), and the content in the file would look like this:
 
 ```js
-// content in eoraptor.render.js
 (function () {
-    var eo = eoraptor;
-    eo.helloTplFn = function (data){
-        var t__=data, r__=[];
+    // NOTE: The reality would be more complex than here
+    var ns = this["namespaceYouLike"] || {};
+
+    ns["hw"] = function (data){
+        var t__ = data, r__ = [];
         r__.push("Hello ");
         r__.push(t__.name);
         r__.push("!");
         return r__.join("");
     };
-    // other pre-compiled function
+    // more functions
+    // ns["foo"] = function (data) {};
     // ...
 });
 ```
 
-The `key` of a render template is get from the template file's name.
-
-```js
-// content in helloTplFn.js
-Hello {{this.name}}!
-```
+NOTE: The reality of `namespace declaration` would be more complex than here, more details will be found in pre-compiling section.
 
 ## API
 
 #### Compiling and caching a template
 
-`eoraptor.compile(template)` / `eoraptor.compile(name, template)`
+`eoraptor.compile(template)` / `eoraptor.compile(id, template)`
 
 * template: the template string.
-* name: the name will be used as the `key` of eorapter.cache.
+* id: a unique name will be used as the `key` for inner cache. If none, the `template` itself will be used instead.
 
-The method returns an `template function` with two properties:
+In order to improve the performance of compiling, this method will save a cache for every template string, when the same template is passed in, it will skip the parsing step and return the cache directly.
 
-```js
-function render(data) {...};
-render.render = render;
-render.source = 'function(data) {...}';
-return render;
-```
-
-The `render` function(and it's `render` method) is a compiled template function which takes one parameter as the context data. The `source` is only the string form of the `render` function, used by the pre-compile tool.
+The method returns a compiled `renderable` function with two properties, the `render` property is a reference to the function itself which takes one parameter as the context data. The `source` property is only the string form of the `render`, used by the pre-compile tool.
 
 Demo:
 
 ```js
-var tpl = eoraptor.compile('...');
+var fooTpl = eoraptor.compile('foo','{{this.foo}}');
 // method 1
-tpl.render(data);
+fooTpl.render(data);
 // method 2
-tpl(data);
+fooTpl(data);
+// method 3
+eoraptor.foo(data);
+```
+
+#### Compiling templates from script tags
+
+`eoraptor.compile()` / `eoraptor.extract()`
+
+When the `compile` method is called with zero parameter, it will get the same effect of `extract` method, that all script tags with a "text/x-eoraptor" type and an unique id property will be processed as individual template definitions.
+
+Demo:
+
+```html
+<script id="sayMorning" type="text/x-eoraptor">
+Good morning, {{this.name}}!
+</script>
+<script id="sayAfternoon" type="text/x-eoraptor">
+Good afternoon, {{this.name}}!
+</script>
+
+<script type="text/javascript">
+eoraptor.compile();
+eoraptor.sayMorning; // "function"
+eoraptor.sayAfternoon; // "function"
+</script>
+```
+
+After calling the `extract`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
+
+```html
+<script id="sayMorning" type="text/x-eoraptor" compiled="1">
+Good morning, {{this.name}}!
+</script>
 ```
 
 #### Setting delimeter
@@ -135,49 +153,6 @@ eoraptor.setDelimiter('<%', '%>');
 var tpl = eoraptor.compile('<%this.name%>');
 tpl({"name": "eoraptor.js"});
 // "eoraptor.js"
-```
-
-#### Initailizing complex templates from script tags and caching them
-
-`eoraptor.extract()`
-
-Demo:
-
-```js
-<!DOCTYPE html>
-<html>
-<body>
-    <script src="path/to/eoraptor.js"></script>
-    <script id="t1" type="text/html">
-    <ul>
-        {{#this.book item key}}
-            <li>{{key}}:{{item}}</li>
-        {{/}}
-    </ul>
-    </script>
-    <script>
-        eoraptor.extract();
-        eoraptor.t1({
-            book: {
-                author: 'tim',
-                price: '$9.00'
-            }
-        });
-    </script>
-</body>
-</html>
-```
-
-After calling the `extract`, the script tag will be added a `compiled` attribute, so it would be ignored in next calling.
-
-```js
-<script id="t1" type="text/html" compiled="1">
-<ul>
-    {{#this.book item key}}
-        <li>{{key}}:{{item}}</li>
-    {{/}}
-</ul>
-</script>
 ```
 
 ## Template
@@ -424,13 +399,12 @@ The JavaScript Templates script is released under the [MIT license](http://opens
 @gnosaij / [www.joy-studio.com](http://www.joy-studio.com)
 
 
-## Updates
+## Changelog
 
 * 2014-04-03
-  - version 1.1.0
   - add `extract` method
 * 2014-04-01
   - add `eoraptor-jst` support
 * 2014-03-21
-  - initial version 1.0.0
+  - initial version
 

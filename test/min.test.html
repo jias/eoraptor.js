@@ -11,18 +11,26 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="">
-<link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+<link rel="stylesheet" href="mocha/mocha.css">
 <script src="../build/eoraptor.min.js"></script>
+<script id="t1" type="text/x-eoraptor">
+function t1() {
+    {{this.code}}
+}
+</script>
+<script id="t2" type="text/x-eoraptor">
+t2 {{this.code}}
+</script>
 </head>
 <body>
 
 <div id="mocha"></div>
-<script src="../node_modules/expect.js/index.js"></script>
-<script src="../node_modules/mocha/mocha.js"></script>
+<script src="expect.js/index.js"></script>
+<script src="mocha/mocha.js"></script>
 <script>mocha.setup("bdd");</script>
 <script src="test.js"></script>
 <script>
-mocha.checkLeaks();
+// mocha.checkLeaks();
 window.onload = function () {
     mocha.run();
 };

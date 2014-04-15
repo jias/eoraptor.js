@@ -465,7 +465,7 @@ describe('usage test', function () {
     });
 
     it('extract from script', function(){
-        eoraptor.extract();
+        eoraptor.compile();
         expect(typeof eoraptor.t1).to.be('function');
         expect(typeof eoraptor.t2).to.be('function');
     });

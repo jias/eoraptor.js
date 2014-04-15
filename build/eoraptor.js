@@ -2,10 +2,10 @@
  * eoraptor.js
  * Copyright (c) 2014 gnosaij
  * Licensed under MIT (https://github.com/Jias/eoraptor.js/blob/master/LICENSE)
- * #DESCRIPTION#
+ * A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.
  * @author gnosaij | http://jias.github.io | http://www.joy-studio.com
- * @version #VERSION#
- * @update #UPDATE#
+ * @version 0.1.1
+ * @update 2014-04-15
  * @link http://www.joy-studio.com/javascript/my-eoraptorjs-template-engine-in-javascript.html
  */
 (function(glob) {
@@ -14,7 +14,7 @@ var delimiterReg = /\{(?!\{\{)\{\s*(.+?)\s*\}\}/g;
 
 var eoraptor = {
     name: 'eoraptor.js',
-    version: '#VERSION#',
+    version: '0.1.1',
     compile: compile,
     escape: escaper,
     extract: extract,
