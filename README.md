@@ -325,18 +325,7 @@ tpl.render(); // "eoraptor.js"
 
 `{{/}}`
 
-Demo: if - elseif - else - end
-
-```js
-    var tpl = eoraptor.compile(
-        "{{#this.status === 1}}"+
-            "one"+
-        "{{^this.status === 2}}"+
-            "two"+
-        "{{^}}"+
-            "unknown"+
-        "{{/}}");
-```
+You can see it everywhere above.
 
 #### partial template
 
@@ -403,6 +392,9 @@ The JavaScript Templates script is released under the [MIT license](http://opens
 
 ## Changelog
 
+* 2014-04-15
+  - `compile` method support zero parameter
+  - update grunt task
 * 2014-04-03
   - add `extract` method
 * 2014-04-01
