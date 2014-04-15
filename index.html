@@ -31,7 +31,7 @@
           <h1>
 <a name="eoraptorjs" class="anchor" href="#eoraptorjs"><span class="octicon octicon-link"></span></a>eoraptor.js</h1>
 
-<p>A tiny, super-easy javascript template engine without any dependence.</p>
+<p>A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.</p>
 
 <h2>
 <a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
@@ -51,69 +51,71 @@
 <p>A quick glance at the <a href="http://jias.github.io/eoraptor.js/test/test.html">unit test</a> maybe the most direct way to dive in.</p>
 
 <h2>
-<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
 
 <h4>
-<a name="base" class="anchor" href="#base"><span class="octicon octicon-link"></span></a>Base</h4>
+<a name="client-side" class="anchor" href="#client-side"><span class="octicon octicon-link"></span></a>Client-side</h4>
 
-<p>Compiling and rendering in browser runtime:</p>
+<p>Including the eoraptor engine by script tag.</p>
 
-<p>Demo: </p>
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"path/to/eoraptor.min.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+</pre></div>
 
-<pre><code>&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;body&gt;
-    &lt;script src="path/to/eoraptor.js"&gt;&lt;/script&gt;
-    &lt;script&gt;
-        var helloTplFn = eoraptor.compile("Hello {{this.name}}!");
-        console.log(helloTplFn({"name": "world"}));
-        console.log(helloTplFn.source);
-    &lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
+<p>The classic <code>hello world</code> example achieved through a variety of ways.</p>
 
-<h4>
-<a name="advanced" class="anchor" href="#advanced"><span class="octicon octicon-link"></span></a>Advanced</h4>
+<h6>
+<a name="method-1compiling-a-template-from-a-string-parameter" class="anchor" href="#method-1compiling-a-template-from-a-string-parameter"><span class="octicon octicon-link"></span></a>Method 1：Compiling a template from a string parameter.</h6>
 
-<p>Rendering directly with the template function that has been pre-compiled before. </p>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">hw</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"Hello {{this.name}}!"</span><span class="p">);</span>
+<span class="nx">hw</span><span class="p">({</span><span class="s2">"name"</span><span class="o">:</span> <span class="s2">"world"</span><span class="p">});</span>
+<span class="c1">// "Hello world!"</span>
+</pre></div>
 
-<p>Demo: </p>
+<p>Usually, this method is more suitable for compiling a pretty simple template.</p>
 
-<pre><code>&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;body&gt;
-    &lt;script src="path/to/eoraptor.js"&gt;&lt;/script&gt;
-    &lt;script src="path/to/eoraptor.render.js"&gt;&lt;/script&gt;
-    &lt;script&gt;
-        console.log(eoraptor.helloTplFn({"name": "world"}));
-    &lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
+<h6>
+<a name="method-2compiling-templates-from-the-script-tags-with-a-textx-eoraptor-type-and-an-unique-id-property" class="anchor" href="#method-2compiling-templates-from-the-script-tags-with-a-textx-eoraptor-type-and-an-unique-id-property"><span class="octicon octicon-link"></span></a>Method 2：Compiling templates from the script tags, with a <code>text/x-eoraptor</code> type and an unique <code>id</code> property.</h6>
 
-<p>The name of <code>eoraptor.render.js</code> file would be any other word as you like when pre-compile building in nodejs, and the content in it would look like this:</p>
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">type=</span><span class="s">"text/x-eoraptor"</span> <span class="na">id=</span><span class="s">"hw"</span><span class="nt">&gt;</span>
+<span class="nx">Hello</span> <span class="p">{{</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">}}</span><span class="o">!</span>
+<span class="nt">&lt;/script&gt;</span>
+<span class="nt">&lt;script&gt;</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">extract</span><span class="p">();</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">hw</span><span class="p">({</span><span class="s2">"name"</span><span class="o">:</span> <span class="s2">"world"</span><span class="p">});</span>
+<span class="c1">// "Hello world!"</span>
+<span class="nt">&lt;/script&gt;</span>
+</pre></div>
 
-<pre><code>// content in eoraptor.render.js
-(function () {
-    var eo = eoraptor;
-    eo.helloTplFn = function (data){
-        var t__=data, r__=[];
-        r__.push("Hello ");
-        r__.push(t__.name);
-        r__.push("!");
-        return r__.join("");
-    };
-    // other pre-compiled function
-    // ...
-});
-</code></pre>
+<h6>
+<a name="method-3-including-the-precompiled-file-which-contains-all-template-functions-and-rendering-directly-without-callingeoraptorcompile-or-exraptorextract-api" class="anchor" href="#method-3-including-the-precompiled-file-which-contains-all-template-functions-and-rendering-directly-without-callingeoraptorcompile-or-exraptorextract-api"><span class="octicon octicon-link"></span></a>Method 3: Including the precompiled file which contains all template functions and rendering directly without calling<code>eoraptor.compile()</code> or <code>exraptor.extract()</code> api.</h6>
 
-<p>The <code>key</code> of a render template is get from the template file's name.</p>
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"path/to/eoraptor-precompiled.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;script&gt;</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">hw</span><span class="p">({</span><span class="s2">"name"</span><span class="o">:</span> <span class="s2">"world"</span><span class="p">});</span>
+<span class="nt">&lt;/script&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
 
-<pre><code>// content in helloTplFn.js
-Hello {{this.name}}!
-</code></pre>
+<p>The name of <code>eoraptor-precompiled.js</code> file and the namespace of all templaltes，<code>eoraptor</code> in the example above, would be any other word as you like(a declaration in options of pre-compiling tool), and the content in the file would look like this:</p>
+
+<div class="highlight highlight-js"><pre><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// NOTE: The reality would be more complex than here</span>
+    <span class="kd">var</span> <span class="nx">ns</span> <span class="o">=</span> <span class="k">this</span><span class="p">[</span><span class="s2">"namespaceYouLike"</span><span class="p">]</span> <span class="o">||</span> <span class="p">{};</span>
+
+    <span class="nx">ns</span><span class="p">[</span><span class="s2">"hw"</span><span class="p">]</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">data</span><span class="p">){</span>
+        <span class="kd">var</span> <span class="nx">t__</span> <span class="o">=</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">r__</span> <span class="o">=</span> <span class="p">[];</span>
+        <span class="nx">r__</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s2">"Hello "</span><span class="p">);</span>
+        <span class="nx">r__</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">t__</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+        <span class="nx">r__</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s2">"!"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nx">r__</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s2">""</span><span class="p">);</span>
+    <span class="p">};</span>
+    <span class="c1">// more functions</span>
+    <span class="c1">// ns["foo"] = function (data) {};</span>
+    <span class="c1">// ...</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>NOTE: The reality of <code>namespace declaration</code> would be more complex than here, more details will be found in pre-compiling section.</p>
 
 <h2>
 <a name="api" class="anchor" href="#api"><span class="octicon octicon-link"></span></a>API</h2>
@@ -121,29 +123,55 @@ Hello {{this.name}}!
 <h4>
 <a name="compiling-and-caching-a-template" class="anchor" href="#compiling-and-caching-a-template"><span class="octicon octicon-link"></span></a>Compiling and caching a template</h4>
 
-<p><code>eoraptor.compile(template)</code> / <code>eoraptor.compile(name, template)</code></p>
+<p><code>eoraptor.compile(template)</code> / <code>eoraptor.compile(id, template)</code></p>
 
 <ul>
 <li>template: the template string.</li>
-<li>name: the name will be used as the <code>key</code> of eorapter.cache. </li>
-</ul><p>The method returns an <code>template function</code> with two properties:</p>
+<li>id: a unique name will be used as the <code>key</code> for inner cache. If none, the <code>template</code> itself will be used instead.</li>
+</ul><p>In order to improve the performance of compiling, this method will save a cache for every template string, when the same template is passed in, it will skip the parsing step and return the cache directly.</p>
 
-<pre><code>function render(data) {...};
-render.render = render;
-render.source = 'function(data) {...}';
-return render;
-</code></pre>
-
-<p>The <code>render</code> function(and it's <code>render</code> method) is a compiled template function which takes one parameter as the context data. The <code>source</code> is only the string form of the <code>render</code> function, used by the pre-compile tool.</p>
+<p>The method returns a compiled <code>renderable</code> function with two properties, the <code>render</code> property is a reference to the function itself which takes one parameter as the context data. The <code>source</code> property is only the string form of the <code>render</code>, used by the pre-compile tool.</p>
 
 <p>Demo:</p>
 
-<pre><code>var tpl = eoraptor.compile('...');
-// method 1
-tpl.render(data);
-// method 2
-tpl(data);
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">fooTpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s1">'foo'</span><span class="p">,</span><span class="s1">'{{this.foo}}'</span><span class="p">);</span>
+<span class="c1">// method 1</span>
+<span class="nx">fooTpl</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="c1">// method 2</span>
+<span class="nx">fooTpl</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="c1">// method 3</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">foo</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</pre></div>
+
+<h4>
+<a name="compiling-templates-from-script-tags" class="anchor" href="#compiling-templates-from-script-tags"><span class="octicon octicon-link"></span></a>Compiling templates from script tags</h4>
+
+<p><code>eoraptor.compile()</code> / <code>eoraptor.extract()</code></p>
+
+<p>When the <code>compile</code> method is called with zero parameter, it will get the same effect of <code>extract</code> method, that all script tags with a "text/x-eoraptor" type and an unique id property will be processed as individual template definitions.</p>
+
+<p>Demo:</p>
+
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">id=</span><span class="s">"sayMorning"</span> <span class="na">type=</span><span class="s">"text/x-eoraptor"</span><span class="nt">&gt;</span>
+<span class="nx">Good</span> <span class="nx">morning</span><span class="p">,</span> <span class="p">{{</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">}}</span><span class="o">!</span>
+<span class="nt">&lt;/script&gt;</span>
+<span class="nt">&lt;script </span><span class="na">id=</span><span class="s">"sayAfternoon"</span> <span class="na">type=</span><span class="s">"text/x-eoraptor"</span><span class="nt">&gt;</span>
+<span class="nx">Good</span> <span class="nx">afternoon</span><span class="p">,</span> <span class="p">{{</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">}}</span><span class="o">!</span>
+<span class="nt">&lt;/script&gt;</span>
+
+<span class="nt">&lt;script </span><span class="na">type=</span><span class="s">"text/javascript"</span><span class="nt">&gt;</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">();</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">sayMorning</span><span class="p">;</span> <span class="c1">// "function"</span>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">sayAfternoon</span><span class="p">;</span> <span class="c1">// "function"</span>
+<span class="nt">&lt;/script&gt;</span>
+</pre></div>
+
+<p>After calling the <code>extract</code>, the script tag will be added a <code>compiled</code> attribute, so it would be ignored in next calling.</p>
+
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">id=</span><span class="s">"sayMorning"</span> <span class="na">type=</span><span class="s">"text/x-eoraptor"</span> <span class="na">compiled=</span><span class="s">"1"</span><span class="nt">&gt;</span>
+<span class="nx">Good</span> <span class="nx">morning</span><span class="p">,</span> <span class="p">{{</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">}}</span><span class="o">!</span>
+<span class="nt">&lt;/script&gt;</span>
+</pre></div>
 
 <h4>
 <a name="setting-delimeter" class="anchor" href="#setting-delimeter"><span class="octicon octicon-link"></span></a>Setting delimeter</h4>
@@ -155,53 +183,11 @@ tpl(data);
 <li>end: optional, the start flag for delimeter, default to '}}'.</li>
 </ul><p>Demo:</p>
 
-<pre><code>eoraptor.setDelimiter('&lt;%', '%&gt;');
-var tpl = eoraptor.compile('&lt;%this.name%&gt;');
-tpl({"name": "eoraptor.js"});
-// "eoraptor.js"
-</code></pre>
-
-<h4>
-<a name="initailizing-complex-templates-from-script-tags-and-caching-them" class="anchor" href="#initailizing-complex-templates-from-script-tags-and-caching-them"><span class="octicon octicon-link"></span></a>Initailizing complex templates from script tags and caching them</h4>
-
-<p><code>eoraptor.extract()</code></p>
-
-<p>Demo:</p>
-
-<pre><code>&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;body&gt;
-    &lt;script src="path/to/eoraptor.js"&gt;&lt;/script&gt;
-    &lt;script id="t1" type="text/html"&gt;
-    &lt;ul&gt;
-        {{#this.book item key}}
-            &lt;li&gt;{{key}}:{{item}}&lt;/li&gt;
-        {{/}}
-    &lt;/ul&gt;
-    &lt;/script&gt;
-    &lt;script&gt;
-        eoraptor.extract();
-        eoraptor.t1({
-            book: {
-                author: 'tim',
-                price: '$9.00'
-            }
-        });
-    &lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-
-<p>After calling the <code>extract</code>, the script tag will be added a <code>compiled</code> attribute, so it would be ignored in next calling.</p>
-
-<pre><code>&lt;script id="t1" type="text/html" compiled="1"&gt;
-&lt;ul&gt;
-    {{#this.book item key}}
-        &lt;li&gt;{{key}}:{{item}}&lt;/li&gt;
-    {{/}}
-&lt;/ul&gt;
-&lt;/script&gt;
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="nx">eoraptor</span><span class="p">.</span><span class="nx">setDelimiter</span><span class="p">(</span><span class="s1">'&lt;%'</span><span class="p">,</span> <span class="s1">'%&gt;'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s1">'&lt;%this.name%&gt;'</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">({</span><span class="s2">"name"</span><span class="o">:</span> <span class="s2">"eoraptor.js"</span><span class="p">});</span>
+<span class="c1">// "eoraptor.js"</span>
+</pre></div>
 
 <h2>
 <a name="template" class="anchor" href="#template"><span class="octicon octicon-link"></span></a>Template</h2>
@@ -217,19 +203,19 @@ tpl({"name": "eoraptor.js"});
 <p>Under the hood, the function returned by <code>eoraptor.compile()</code> is builded without <code>with</code> statement, so the expression needs to start with <code>this.</code> prefix and it will not throw errors like <code>underscore</code>.</p>
 </blockquote>
 
-<p>Demo: output the value of the <code>key</code> in context data. </p>
+<p>Demo: output the value of the <code>key</code> in context data.</p>
 
-<pre><code>var tpl = eoraptor.compile("{{this.name}}");
-tpl.render({"name": "eoraptor.js"}); 
-// "eoraptor.js"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"{{this.name}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">({</span><span class="s2">"name"</span><span class="o">:</span> <span class="s2">"eoraptor.js"</span><span class="p">});</span>
+<span class="c1">// "eoraptor.js"</span>
+</pre></div>
 
 <p>Demo: if there is no such <code>key</code> in context data.</p>
 
-<pre><code>var tpl = eoraptor.compile("{{this.name}}");
-tpl.render({}); 
-// "" empty string
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"{{this.name}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">({});</span>
+<span class="c1">// "" empty string</span>
+</pre></div>
 
 <h4>
 <a name="html-escaped-variable" class="anchor" href="#html-escaped-variable"><span class="octicon octicon-link"></span></a>html-escaped variable:</h4>
@@ -238,12 +224,12 @@ tpl.render({});
 
 <ul>
 <li>key: required, the direct value of the <code>key</code> in context data.</li>
-</ul><p>demo: output the html-escaped value of the <code>key</code> in context data. </p>
+</ul><p>demo: output the html-escaped value of the <code>key</code> in context data.</p>
 
-<pre><code>var tpl = eoraptor.compile("{{@this.name}}");
-tpl.render({"name": "&lt;h1&gt; eoraptor.js &lt;/h1&gt;"}); 
-// "&amp;lt;h1&amp;gt; eoraptor.js &amp;lt;/h1&amp;gt;"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"{{@this.name}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">({</span><span class="s2">"name"</span><span class="o">:</span> <span class="s2">"&lt;h1&gt; eoraptor.js &lt;/h1&gt;"</span><span class="p">});</span>
+<span class="c1">// "&amp;lt;h1&amp;gt; eoraptor.js &amp;lt;/h1&amp;gt;"</span>
+</pre></div>
 
 <h4>
 <a name="if-block" class="anchor" href="#if-block"><span class="octicon octicon-link"></span></a>if block:</h4>
@@ -259,19 +245,19 @@ tpl.render({"name": "&lt;h1&gt; eoraptor.js &lt;/h1&gt;"});
 
 <p>Demo: To determine whether the <code>if()</code> is like <code>true</code>, comparing by <code>==</code>.</p>
 
-<pre><code>var data = {"foo": 1};
-var tpl = eoraptor.compile("{{#this.foo}}like true{{/}}");
-tpl.render(data); 
-// "like true"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"foo"</span><span class="o">:</span> <span class="mi">1</span><span class="p">};</span>
+<span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"{{#this.foo}}like true{{/}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="c1">// "like true"</span>
+</pre></div>
 
 <p>Demo: To determine whether the <code>if()</code> is <code>true</code>, comparing by <code>===</code>.</p>
 
-<pre><code>var data = {"foo": 1};
-var tpl = eoraptor.compile("{{#this.foo===true}}is true{{/}}");
-tpl.render(data); 
-// "" empty string
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"foo"</span><span class="o">:</span> <span class="mi">1</span><span class="p">};</span>
+<span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"{{#this.foo===true}}is true{{/}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="c1">// "" empty string</span>
+</pre></div>
 
 <h4>
 <a name="else-if-block" class="anchor" href="#else-if-block"><span class="octicon octicon-link"></span></a>else if block:</h4>
@@ -287,14 +273,14 @@ tpl.render(data);
 
 <p>Demo:</p>
 
-<pre><code>var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
-    "one"+
-"{{^this.number === 2}}"+
-    "two"+
-"{{/}}");
-tpl.render({"number": 2}); 
-// "the number is two"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"the number is {{#this.number === 1}}"</span><span class="o">+</span>
+    <span class="s2">"one"</span><span class="o">+</span>
+<span class="s2">"{{^this.number === 2}}"</span><span class="o">+</span>
+    <span class="s2">"two"</span><span class="o">+</span>
+<span class="s2">"{{/}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">({</span><span class="s2">"number"</span><span class="o">:</span> <span class="mi">2</span><span class="p">});</span>
+<span class="c1">// "the number is two"</span>
+</pre></div>
 
 <h4>
 <a name="else-block" class="anchor" href="#else-block"><span class="octicon octicon-link"></span></a>else block:</h4>
@@ -305,14 +291,14 @@ tpl.render({"number": 2});
 
 <p>Demo:</p>
 
-<pre><code>var tpl = eoraptor.compile("the number is {{#this.number === 1}}"+
-    "one"+
-"{{^}}"+
-    "unknown"+
-"{{/}}");
-tpl.render({}); 
-// "the number is unknown"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"the number is {{#this.number === 1}}"</span><span class="o">+</span>
+    <span class="s2">"one"</span><span class="o">+</span>
+<span class="s2">"{{^}}"</span><span class="o">+</span>
+    <span class="s2">"unknown"</span><span class="o">+</span>
+<span class="s2">"{{/}}"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">({});</span>
+<span class="c1">// "the number is unknown"</span>
+</pre></div>
 
 <h4>
 <a name="iteration-block" class="anchor" href="#iteration-block"><span class="octicon octicon-link"></span></a>iteration block:</h4>
@@ -325,38 +311,38 @@ tpl.render({});
 <li>currentKey: optional, default to <code>k__</code>, assign a variable to represent the current key in an iterative process. It will be a <code>number</code> value(like 0, 1, 2, etc.) or a <code>string</code> value determined by the iterative object, say, <code>array</code> or <code>object</code>.</li>
 </ul><p>Demo: traversal of an array</p>
 
-<pre><code>var data = {
-    name: "eoraptor",
-    features: [
-        "simple",
-        "standalone"
-    ]
-};
-var tpl = eoraptor.compile("&lt;ul&gt;"+
-    "{{#this.features item key}}"+
-        "&lt;li&gt;{{key}}. {{this.name}} is {{item}}&lt;/li&gt;"+
-    "{{/}}"+
-"&lt;/ul&gt;");
-tpl.render(data); 
-// "&lt;ul&gt;&lt;li&gt;0. eoraptor is simple&lt;/li&gt;&lt;li&gt;1. eoraptor is standalone&lt;/li&gt;&lt;/ul&gt;"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s2">"eoraptor"</span><span class="p">,</span>
+    <span class="nx">features</span><span class="o">:</span> <span class="p">[</span>
+        <span class="s2">"simple"</span><span class="p">,</span>
+        <span class="s2">"standalone"</span>
+    <span class="p">]</span>
+<span class="p">};</span>
+<span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"&lt;ul&gt;"</span><span class="o">+</span>
+    <span class="s2">"{{#this.features item key}}"</span><span class="o">+</span>
+        <span class="s2">"&lt;li&gt;{{key}}. {{this.name}} is {{item}}&lt;/li&gt;"</span><span class="o">+</span>
+    <span class="s2">"{{/}}"</span><span class="o">+</span>
+<span class="s2">"&lt;/ul&gt;"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="c1">// "&lt;ul&gt;&lt;li&gt;0. eoraptor is simple&lt;/li&gt;&lt;li&gt;1. eoraptor is standalone&lt;/li&gt;&lt;/ul&gt;"</span>
+</pre></div>
 
 <p>Demo: enumerating an object</p>
 
-<pre><code>var data = {
-    features: {
-        "grammer": "simple",
-        "dependency": "standalone"
-    }
-};
-var tpl = eoraptor.compile("&lt;ul&gt;"+
-    "{{#this.features item key}}"+
-        "&lt;li&gt;{{key}}:{{item}}&lt;/li&gt;"+
-    "{{/}}"+
-"&lt;/ul&gt;");
-tpl.render(data); 
-// "&lt;ul&gt;&lt;li&gt;grammer:simple&lt;/li&gt;&lt;li&gt;dependency:standalone&lt;/li&gt;&lt;/ul&gt;"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">features</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">"grammer"</span><span class="o">:</span> <span class="s2">"simple"</span><span class="p">,</span>
+        <span class="s2">"dependency"</span><span class="o">:</span> <span class="s2">"standalone"</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+<span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"&lt;ul&gt;"</span><span class="o">+</span>
+    <span class="s2">"{{#this.features item key}}"</span><span class="o">+</span>
+        <span class="s2">"&lt;li&gt;{{key}}:{{item}}&lt;/li&gt;"</span><span class="o">+</span>
+    <span class="s2">"{{/}}"</span><span class="o">+</span>
+<span class="s2">"&lt;/ul&gt;"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span> 
+<span class="c1">// "&lt;ul&gt;&lt;li&gt;grammer:simple&lt;/li&gt;&lt;li&gt;dependency:standalone&lt;/li&gt;&lt;/ul&gt;"</span>
+</pre></div>
 
 <h4>
 <a name="comment-block" class="anchor" href="#comment-block"><span class="octicon octicon-link"></span></a>comment block</h4>
@@ -365,28 +351,18 @@ tpl.render(data);
 
 <ul>
 <li>comment, any word for the commit.</li>
-</ul><p>Demo: </p>
+</ul><p>Demo:</p>
 
-<pre><code>var tpl = eoraptor.compile("{{!hello}}eoraptor.js");
-tpl.render(); // "eoraptor.js"
-</code></pre>
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s2">"{{!hello}}eoraptor.js"</span><span class="p">);</span>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">();</span> <span class="c1">// "eoraptor.js"</span>
+</pre></div>
 
 <h4>
 <a name="end-of-a-block" class="anchor" href="#end-of-a-block"><span class="octicon octicon-link"></span></a>end of a block</h4>
 
 <p><code>{{/}}</code></p>
 
-<p>Demo: if - elseif - else - end</p>
-
-<pre><code>var tpl = eoraptor.compile(
-    "{{#this.status === 1}}"+
-        "one"+
-    "{{^this.status === 2}}"+
-        "two"+
-    "{{^}}"+
-        "unknown"+
-    "{{/}}");
-</code></pre>
+<p>You can see it everywhere above.</p>
 
 <h4>
 <a name="partial-template" class="anchor" href="#partial-template"><span class="octicon octicon-link"></span></a>partial template</h4>
@@ -396,8 +372,7 @@ tpl.render(); // "eoraptor.js"
 <ul>
 <li>partialName: required, the name of partial template</li>
 <li>partialContext: optional, the data context for partial template function</li>
-</ul><p>Most of time, each UI compontent in the page is coded 
-by several people, and everyone has the responsibility to keep their code clean, so the <code>key</code> in the partial template may be the same as each other. As you will see in the code lower, both templates, <code>navi</code> and <code>slider</code>, have the <code>list</code> key, so it will not work correctly with a public context data.</p>
+</ul><p>Most of time, each UI compontent in the page is coded by several people, and everyone has the responsibility to keep their code clean, so the <code>key</code> in the partial template may be the same as each other. As you will see in the code lower, both templates, <code>navi</code> and <code>slider</code>, have the <code>list</code> key, so it will not work correctly with a public context data.</p>
 
 <blockquote>
 <p>Unless changing <code>list</code> into <code>naviList</code> and <code>sliderList</code>, but it's clearly violates the reused principle.</p>
@@ -407,42 +382,42 @@ by several people, and everyone has the responsibility to keep their code clean,
 
 <p>Compiling two partial templates for later use, say <code>navi</code> and <code>slider</code>:</p>
 
-<pre><code>eoraptor.compile('navi', '&lt;ul&gt;{{#this.list item}}'+
-    '&lt;li&gt;{{item.text}}&lt;/li&gt;'+
-'{{/}}&lt;/ul&gt;');
+<div class="highlight highlight-js"><pre><span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s1">'navi'</span><span class="p">,</span> <span class="s1">'&lt;ul&gt;{{#this.list item}}'</span><span class="o">+</span>
+    <span class="s1">'&lt;li&gt;{{item.text}}&lt;/li&gt;'</span><span class="o">+</span>
+<span class="s1">'{{/}}&lt;/ul&gt;'</span><span class="p">);</span>
 
-eoraptor.compile('slider', '&lt;ul&gt;{{#this.list item}}'+
-    '&lt;li&gt;{{item.img}}&lt;/li&gt;'+
-'{{/}}&lt;/ul&gt;');
-</code></pre>
+<span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span><span class="s1">'slider'</span><span class="p">,</span> <span class="s1">'&lt;ul&gt;{{#this.list item}}'</span><span class="o">+</span>
+    <span class="s1">'&lt;li&gt;{{item.img}}&lt;/li&gt;'</span><span class="o">+</span>
+<span class="s1">'{{/}}&lt;/ul&gt;'</span><span class="p">);</span>
+</pre></div>
 
-<p>Below we compile and render a combined template, including two partial templates defined above. </p>
+<p>Below we compile and render a combined template, including two partial templates defined above.</p>
 
-<pre><code>var tpl = eoraptor.compile(
-    '&lt;p&gt;navi:&lt;/p&gt;'+
-    '{{&gt;navi this.navi}}'+
-    '&lt;p&gt;slider:&lt;/p&gt;'+
-    '{{&gt;slider this.slider}}'
-);
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">tpl</span> <span class="o">=</span> <span class="nx">eoraptor</span><span class="p">.</span><span class="nx">compile</span><span class="p">(</span>
+    <span class="s1">'&lt;p&gt;navi:&lt;/p&gt;'</span><span class="o">+</span>
+    <span class="s1">'{{&gt;navi this.navi}}'</span><span class="o">+</span>
+    <span class="s1">'&lt;p&gt;slider:&lt;/p&gt;'</span><span class="o">+</span>
+    <span class="s1">'{{&gt;slider this.slider}}'</span>
+<span class="p">);</span>
 
-tpl.render({
-    navi: {
-        list: [
-            {text: 'foo'}, {text: 'boo'}
-        ]
-    },
-    slider: {
-        list: [
-            {img: '1.jpg'}, {img: '2.jpg'}
-        ]
-    }
-});
-// output:
-//   &lt;p&gt;navi:&lt;/p&gt;
-//   &lt;ul&gt;&lt;li&gt;foo&lt;/li&gt;&lt;li&gt;boo&lt;/li&gt;&lt;/ul&gt;
-//   &lt;p&gt;slider:&lt;/p&gt;
-//   &lt;ul&gt;&lt;li&gt;1.jpg&lt;/li&gt;&lt;li&gt;2.jpg&lt;/li&gt;&lt;/ul&gt;
-</code></pre>
+<span class="nx">tpl</span><span class="p">.</span><span class="nx">render</span><span class="p">({</span>
+    <span class="nx">navi</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">list</span><span class="o">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="nx">text</span><span class="o">:</span> <span class="s1">'foo'</span><span class="p">},</span> <span class="p">{</span><span class="nx">text</span><span class="o">:</span> <span class="s1">'boo'</span><span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">},</span>
+    <span class="nx">slider</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">list</span><span class="o">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="nx">img</span><span class="o">:</span> <span class="s1">'1.jpg'</span><span class="p">},</span> <span class="p">{</span><span class="nx">img</span><span class="o">:</span> <span class="s1">'2.jpg'</span><span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+<span class="c1">// output:</span>
+<span class="c1">//   &lt;p&gt;navi:&lt;/p&gt;</span>
+<span class="c1">//   &lt;ul&gt;&lt;li&gt;foo&lt;/li&gt;&lt;li&gt;boo&lt;/li&gt;&lt;/ul&gt;</span>
+<span class="c1">//   &lt;p&gt;slider:&lt;/p&gt;</span>
+<span class="c1">//   &lt;ul&gt;&lt;li&gt;1.jpg&lt;/li&gt;&lt;li&gt;2.jpg&lt;/li&gt;&lt;/ul&gt;</span>
+</pre></div>
 
 <h2>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
@@ -455,13 +430,20 @@ tpl.render({
 <p>@gnosaij / <a href="http://www.joy-studio.com">www.joy-studio.com</a></p>
 
 <h2>
-<a name="updates" class="anchor" href="#updates"><span class="octicon octicon-link"></span></a>Updates</h2>
+<a name="changelog" class="anchor" href="#changelog"><span class="octicon octicon-link"></span></a>Changelog</h2>
 
 <ul>
+<li>2014-04-15
+
+<ul>
+<li>
+<code>compile</code> method support zero parameter</li>
+<li>update grunt task</li>
+</ul>
+</li>
 <li>2014-04-03
 
 <ul>
-<li>version 1.1.0</li>
 <li>add <code>extract</code> method</li>
 </ul>
 </li>
@@ -474,7 +456,7 @@ tpl.render({
 <li>2014-03-21
 
 <ul>
-<li>initial version 1.0.0</li>
+<li>initial version</li>
 </ul>
 </li>
 </ul>
