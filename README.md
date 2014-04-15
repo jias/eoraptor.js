@@ -292,20 +292,21 @@ tpl.render(data);
 
 Demo: enumerating an object
 
-    var data = {
-        features: {
-            "grammer": "simple",
-            "dependency": "standalone"
-        }
-    };
-    var tpl = eoraptor.compile("<ul>"+
-        "{{#this.features item key}}"+
-            "<li>{{key}}:{{item}}</li>"+
-        "{{/}}"+
-    "</ul>");
-    tpl.render(data); 
-    // "<ul><li>grammer:simple</li><li>dependency:standalone</li></ul>"
-
+```js
+var data = {
+    features: {
+        "grammer": "simple",
+        "dependency": "standalone"
+    }
+};
+var tpl = eoraptor.compile("<ul>"+
+    "{{#this.features item key}}"+
+        "<li>{{key}}:{{item}}</li>"+
+    "{{/}}"+
+"</ul>");
+tpl.render(data); 
+// "<ul><li>grammer:simple</li><li>dependency:standalone</li></ul>"
+```
 
 #### comment block 
 
@@ -315,10 +316,11 @@ Demo: enumerating an object
 
 Demo:
 
-    var tpl = eoraptor.compile("{{!hello}}eoraptor.js");
-    tpl.render(); // "eoraptor.js"
+```js
+var tpl = eoraptor.compile("{{!hello}}eoraptor.js");
+tpl.render(); // "eoraptor.js"
+```
 
-   
 #### end of a block
 
 `{{/}}`
