@@ -1,63 +1,3 @@
-describe('inner-system test', function () {
-    var ec = eoraptor.compile;
-    var eachReg = /^t__(.+?)\s(\w+)\s?(\w+)?.*$/;
-
-    it('eoraptor.template is function', function () {
-        expect(ec).to.be.a('function');
-    });
-
-    it('eachReg this.a b', function(){
-        var m1 = 't__.a b'.match(eachReg);
-        expect(m1[0]).to.be("t__.a b");
-        expect(m1[1]).to.be(".a");
-        expect(m1[2]).to.be("b");
-    });
-
-    it('eachReg this.a.a b', function(){
-        var m1 = 't__.a.a b'.match(eachReg);
-        expect(m1[0]).to.be("t__.a.a b");
-        expect(m1[1]).to.be(".a.a");
-        expect(m1[2]).to.be("b");
-    });
-
-    it('eachReg this["a"] b', function(){
-        var m1 = 't__["a"] b'.match(eachReg);
-        expect(m1[0]).to.be('t__["a"] b');
-        expect(m1[1]).to.be('["a"]');
-        expect(m1[2]).to.be("b");
-    });
-
-    it('eachReg this["a"].a b', function(){
-        var m1 = 't__["a"].a b'.match(eachReg);
-        expect(m1[0]).to.be('t__["a"].a b');
-        expect(m1[1]).to.be('["a"].a');
-        expect(m1[2]).to.be("b");
-    });
-
-    it('eachReg this.a["a"] b', function(){
-        var m1 = 't__.a["a"] b'.match(eachReg);
-        expect(m1[0]).to.be('t__.a["a"] b');
-        expect(m1[1]).to.be('.a["a"]');
-        expect(m1[2]).to.be("b");
-    });
-
-    it('eachReg this["a"]["a"] b', function(){
-        var m1 = 't__["a"]["a"] b'.match(eachReg);
-        expect(m1[0]).to.be('t__["a"]["a"] b');
-        expect(m1[1]).to.be('["a"]["a"]');
-        expect(m1[2]).to.be("b");
-    });
-
-    it('eachReg this["a-a"] b', function(){
-        var m1 = 't__["a-a"] b'.match(eachReg);
-        expect(m1[0]).to.be('t__["a-a"] b');
-        expect(m1[1]).to.be('["a-a"]');
-        expect(m1[2]).to.be("b");
-    });
-
-});
-
-
 describe('usage test', function () {
     var ec = eoraptor.compile;
 
@@ -92,7 +32,7 @@ describe('usage test', function () {
     });
 
     it('{{ this.name }}', function(){
-        var tpl = ec('{{    this.name }}');
+        var tpl = ec('{{ this.name }}');
         // console.log(tpl.source);
         expect(tpl.render({name:'eoraptor.js'})).to.be('eoraptor.js');
     });
@@ -102,20 +42,25 @@ describe('usage test', function () {
         expect(ec('{{this.name}}').render({})).to.be('');
     });
 
-    it('{{}},quote value', function(){
+//    it('{{this.namse}}, no such key', function(){
+//        console.log(ec('{{this.name}}').source);
+//        expect(ec('{{this.name}}').render({})).to.be('');
+//    });
+
+    it('{{}}, value with "quote"', function(){
         // console.log(ec('{{this.name}}').source);
         expect(ec('{{this.name}}').render({name:'hello "eoraptor"'})).to.be('hello "eoraptor"');
     });
 
-    it('{{}},quote key', function(){
+    it('{{}}, key with "quote"', function(){
         // console.log(ec('{{this["first-name"]}}').source);
         expect(ec('{{this["first-name"]}}').render({'first-name':'hello "eoraptor"'})).to.be('hello "eoraptor"');
-    });  
+    });
 
-    it('{{}},quote string', function(){
+    it('{{}}, template with "quote"', function(){
         // console.log(ec('hello "eoraptor"').source);
         expect(ec('hello "eoraptor"').render()).to.be('hello "eoraptor"');
-    });   
+    });
 
     it('{{}},html', function(){
         expect(ec('{{this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('<h1>eoraptor</h1>');
@@ -135,11 +80,11 @@ describe('usage test', function () {
     });
 
     it('{{@}}', function(){
-        expect(ec('{{@this.name}}').render({name:'eoraptor'})).to.be('eoraptor'); 
+        expect(ec('{{@this.name}}').render({name:'eoraptor'})).to.be('eoraptor');
     });
 
     it('{{@}} + html', function(){
-        expect(ec('{{@this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('&lt;h1&gt;eoraptor&lt;/h1&gt;'); 
+        expect(ec('{{@this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('&lt;h1&gt;eoraptor&lt;/h1&gt;');
     });
 
     it('array', function(){
@@ -381,11 +326,11 @@ describe('usage test', function () {
         // }
 
         // define the 'navi' partial template
-        eoraptor.compile('navi', '<ul>{{#this.list item}}'+
+        ec('navi', '<ul>{{#this.list item}}'+
             '<li>{{item.text}}</li>'+
         '{{/}}</ul>');
 
-        // data for slider  partial template
+        // data for slider partial template
         // {
         //     list: [
         //         {
@@ -398,7 +343,7 @@ describe('usage test', function () {
         // }
 
         // define 'slider' partial template
-        eoraptor.compile('slider', '<ul>{{#this.list item}}'+
+        ec('slider', '<ul>{{#this.list item}}'+
             '<li>{{item.img}}</li>'+
         '{{/}}</ul>');
 
@@ -427,7 +372,7 @@ describe('usage test', function () {
         };
 
         // group template
-        var tpl = eoraptor.compile('<p>navi:</p>'+
+        var tpl = ec('<p>navi:</p>'+
             '{{>navi this.navi}}'+
             '<p>slider:</p>'+
             '{{>slider this.slider}}');
@@ -435,7 +380,7 @@ describe('usage test', function () {
         // console.log(tpl.source);
 
         expect(tpl.render(data)).to.be('<p>navi:</p><ul><li>foo</li><li>boo</li></ul><p>slider:</p><ul><li>1.jpg</li><li>2.jpg</li></ul>');
-        
+
     });
 
     it('<%this.name%>', function(){
@@ -471,3 +416,87 @@ describe('usage test', function () {
     });
 });
 
+describe('inner-system test', function () {
+    var ec = eoraptor.compile;
+    var eachReg = /^t__(.+?)\s(\w+)\s?(\w+)?.*$/;
+
+    it('eoraptor.template is function', function () {
+        expect(ec).to.be.a('function');
+    });
+
+    it('eachReg this.a b', function(){
+        var m1 = 't__.a b'.match(eachReg);
+        expect(m1[0]).to.be("t__.a b");
+        expect(m1[1]).to.be(".a");
+        expect(m1[2]).to.be("b");
+    });
+
+    it('eachReg this.a.a b', function(){
+        var m1 = 't__.a.a b'.match(eachReg);
+        expect(m1[0]).to.be("t__.a.a b");
+        expect(m1[1]).to.be(".a.a");
+        expect(m1[2]).to.be("b");
+    });
+
+    it('eachReg this["a"] b', function(){
+        var m1 = 't__["a"] b'.match(eachReg);
+        expect(m1[0]).to.be('t__["a"] b');
+        expect(m1[1]).to.be('["a"]');
+        expect(m1[2]).to.be("b");
+    });
+
+    it('eachReg this["a"].a b', function(){
+        var m1 = 't__["a"].a b'.match(eachReg);
+        expect(m1[0]).to.be('t__["a"].a b');
+        expect(m1[1]).to.be('["a"].a');
+        expect(m1[2]).to.be("b");
+    });
+
+    it('eachReg this.a["a"] b', function(){
+        var m1 = 't__.a["a"] b'.match(eachReg);
+        expect(m1[0]).to.be('t__.a["a"] b');
+        expect(m1[1]).to.be('.a["a"]');
+        expect(m1[2]).to.be("b");
+    });
+
+    it('eachReg this["a"]["a"] b', function(){
+        var m1 = 't__["a"]["a"] b'.match(eachReg);
+        expect(m1[0]).to.be('t__["a"]["a"] b');
+        expect(m1[1]).to.be('["a"]["a"]');
+        expect(m1[2]).to.be("b");
+    });
+
+    it('eachReg this["a-a"] b', function(){
+        var m1 = 't__["a-a"] b'.match(eachReg);
+        expect(m1[0]).to.be('t__["a-a"] b');
+        expect(m1[1]).to.be('["a-a"]');
+        expect(m1[2]).to.be("b");
+    });
+
+});
+
+describe('pipe filter test', function () {
+
+    var t = eoraptor.compile('{{#this.list item}}{{item}}{{/}}');
+    console.log(t.source);
+    console.log(t({list: ['ccc', 'ddd']}));
+
+//    var pipeReg = /\s?\|\s?[a-zA-Z]+:.+)$/;
+//    var reg = /\|[a-zA-Z]+/g;
+//    var t1 = "name['|cat']|cat:'abc'|omit:40";
+//    var t2 = "name['|cat:'] | omit:40 | format:yyyy-mm-dd";
+//    t2 = "'yyyy-mm\'-dd'";
+
+//    var t3 = t2.replace(/'.*?'/g, '_');
+//    console.log(t3);
+//
+//    var t = eoraptor.compile('{{--this.name}}');
+//    console.log(t.source);
+//    console.log(t({name:2}));
+
+//    console.log("----------")
+//    while (match = reg.exec(t1)) {
+//
+//        console.log(match);
+//    }
+});

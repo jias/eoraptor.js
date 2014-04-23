@@ -42,7 +42,7 @@ var thisReg = /\bthis\b/g,
 
 function compile() {
     var args = arguments, name, tpl;
-    
+
     if (args.length === 2) {
         name = args[0];
         tpl = args[1];
@@ -61,7 +61,7 @@ function compile() {
         code = 'var t__=data, r__=[];\n',
         pos = 0;
 
-    while(match = delimiterReg.exec(tpl)) {
+    while (match = delimiterReg.exec(tpl)) {
         code += parseString(tpl.slice(pos, match.index));
         code += parseJS(match[1], true);
         pos = match.index + match[0].length;
@@ -80,7 +80,7 @@ function compile() {
             console.log(data);
             console.log(tpl);
         }
-        return result;            
+        return result;
     };
 
     render.render = render;
@@ -115,10 +115,10 @@ function setDelimiter(start, end) {
     start = start || '{{';
     end = end || '}}';
     delimiterReg = new RegExp(
-        escapeDelimiter(start.charAt(0))+ 
+        escapeDelimiter(start.charAt(0))+
         '(?!'+escapeDelimiter(start)+')'+
-        escapeDelimiter(start.substr(1))+ 
-        '\\s*(.+?)\\s*'+ 
+        escapeDelimiter(start.substr(1))+
+        '\\s*(.+?)\\s*'+
         escapeDelimiter(end)
     , 'g');
 }
@@ -147,7 +147,7 @@ function parseJS(str) {
 
     if (flags.indexOf(firstChar) === -1) {
         return 'r__.push(' + str + ');\n';
-    } 
+    }
 
     var code = empty;
 
@@ -191,7 +191,7 @@ function parseJS(str) {
         default:
             break;
     }
-        
+
     return code;
 }
 

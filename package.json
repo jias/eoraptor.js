@@ -20,6 +20,7 @@
   "devDependencies": {
     "grunt-cli": "latest",
     "grunt-contrib-uglify": "latest",
+    "grunt-contrib-watch": "latest",
     "expect.js": "*",
     "mocha": "*",
     "grunt-text-replace": "~0.3.11"

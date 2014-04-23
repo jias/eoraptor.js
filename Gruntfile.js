@@ -27,11 +27,21 @@ grunt.initConfig({
                 to: '<%=pkg.description%>'
             }]
         }
+    },
+    watch: {
+        js: {
+            files: ['*/*.js', 'test/test.html'],
+            // tasks: ['concat:js', 'uglify:js'],
+            options: {
+                livereload: true,
+            }
+        }
     }
 });
 
 grunt.loadNpmTasks('grunt-contrib-uglify');
 grunt.loadNpmTasks('grunt-text-replace');
+grunt.loadNpmTasks('grunt-contrib-watch');
 
 grunt.registerTask('default', ['replace','uglify']);
 
