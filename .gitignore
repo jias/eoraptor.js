@@ -1,2 +1,5 @@
 node_modules
 .idea
+backup
+test/dev.html
+test/dev.js

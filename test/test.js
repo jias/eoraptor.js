@@ -27,64 +27,55 @@ describe('usage test', function () {
         expect(tpl.render({})).to.be(' eoraptor.js ');
     });
 
-    it('{{this.name}}', function(){
-        expect(ec('{{this.name}}').render({name:'eoraptor.js'})).to.be('eoraptor.js');
+    it('{{=this.name}}', function(){
+        expect(ec('{{=this.name}}').render({name:'eoraptor.js'})).to.be('eoraptor.js');
     });
 
-    it('{{ this.name }}', function(){
-        var tpl = ec('{{ this.name }}');
+    it('{{= this.name }}', function(){
+        var tpl = ec('{{= this.name }}');
         // console.log(tpl.source);
         expect(tpl.render({name:'eoraptor.js'})).to.be('eoraptor.js');
     });
 
-    it('{{this.name}}, no such key', function(){
-        // console.log(ec('{{this.name}}').source);
-        expect(ec('{{this.name}}').render({})).to.be('');
+    it('{{=this.name}}, no such key', function(){
+        // console.log(ec('{{=this.name}}').source);
+        expect(ec('{{=this.name}}').render({})).to.be('');
     });
 
-//    it('{{this.namse}}, no such key', function(){
-//        console.log(ec('{{this.name}}').source);
-//        expect(ec('{{this.name}}').render({})).to.be('');
-//    });
-
-    it('{{}}, value with "quote"', function(){
-        // console.log(ec('{{this.name}}').source);
-        expect(ec('{{this.name}}').render({name:'hello "eoraptor"'})).to.be('hello "eoraptor"');
+    it('escape', function(){
+        expect(ec('{{=this.name}}').render({name:'hello "eoraptor"'})).to.be('hello &quot;eoraptor&quot;');
     });
 
-    it('{{}}, key with "quote"', function(){
-        // console.log(ec('{{this["first-name"]}}').source);
-        expect(ec('{{this["first-name"]}}').render({'first-name':'hello "eoraptor"'})).to.be('hello "eoraptor"');
+    it('no-escape', function(){
+        expect(ec('{{-this.name}}').render({name:'hello "eoraptor"'})).to.be('hello "eoraptor"');
     });
 
-    it('{{}}, template with "quote"', function(){
+    it('template with "quote"', function(){
         // console.log(ec('hello "eoraptor"').source);
         expect(ec('hello "eoraptor"').render()).to.be('hello "eoraptor"');
     });
 
-    it('{{}},html', function(){
-        expect(ec('{{this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('<h1>eoraptor</h1>');
+    it('html', function(){
+        expect(ec('{{-this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('<h1>eoraptor</h1>');
     });
 
-    it('{{}} + "-"', function(){
-        // console.log(ec('{{this["first-name"]}}').source);
-        expect(ec('{{this["first-name"]}}').render({'first-name':'<h1>eoraptor</h1>'}))
+    it('key with "-"', function(){
+        // console.log(ec('{{=this["first-name"]}}').source);
+        expect(ec('{{-this["first-name"]}}').render({'first-name':'<h1>eoraptor</h1>'}))
         .to.be('<h1>eoraptor</h1>');
     });
 
-    it('w:{{this.w}}, h:{{this.h}}', function(){
-        expect(ec('w:{{this.w}}, h:{{this.h}}').render({
+    it('w:{{=this.w}}, h:{{=this.h}}', function(){
+        var tpl = ec('w:{{=this.w}}, h:{{=this.h}}');
+        // console.log(tpl.source);
+        expect(tpl.render({
             w:10,
             h:20
         })).to.be('w:10, h:20');
     });
 
-    it('{{@}}', function(){
-        expect(ec('{{@this.name}}').render({name:'eoraptor'})).to.be('eoraptor');
-    });
-
-    it('{{@}} + html', function(){
-        expect(ec('{{@this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('&lt;h1&gt;eoraptor&lt;/h1&gt;');
+    it('escape', function(){
+        expect(ec('{{=this.name}}').render({name:'<h1>eoraptor</h1>'})).to.be('&lt;h1&gt;eoraptor&lt;/h1&gt;');
     });
 
     it('array', function(){
@@ -96,8 +87,8 @@ describe('usage test', function () {
         };
 
         var tpl = '<ul>'+
-            '{{#this.features item key}}'+
-              '<li>{{key}}:{{item}}</li>'+
+            '{{^this.features item key}}'+
+              '<li>{{-key}}:{{-item}}</li>'+
             '{{/}}'+
         '</ul>';
 
@@ -116,8 +107,8 @@ describe('usage test', function () {
         };
 
         var tpl = '<ul>'+
-            '{{#this.features item}}'+
-              '<li>{{this.name}} is {{item}}</li>'+
+            '{{^this.features item}}'+
+              '<li>{{=this.name}} is {{=item}}</li>'+
             '{{/}}'+
         '</ul>';
 
@@ -135,7 +126,7 @@ describe('usage test', function () {
 
         var tpl = '<ul>'+
             '{{#this.book item key}}'+
-              '<li>{{key}}:{{item}}</li>'+
+              '<li>{{=key}}:{{=item}}</li>'+
             '{{/}}'+
         '</ul>';
 
@@ -153,8 +144,8 @@ describe('usage test', function () {
         };
 
         var tpl = '<ul>'+
-            '{{#this["new-book"] item key aaa}}'+
-              '<li>{{key}}:{{item}}</li>'+
+            '{{#this["new-book"] item key}}'+
+              '<li>{{=key}}:{{=item}}</li>'+
             '{{/}}'+
         '</ul>';
 
@@ -168,7 +159,7 @@ describe('usage test', function () {
         var data = {
             foo: true
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = 'foo';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -178,7 +169,7 @@ describe('usage test', function () {
         var data = {
             foo: 1
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = 'foo';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -188,7 +179,7 @@ describe('usage test', function () {
         var data = {
             foo: 'foo'
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = 'foo';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -198,7 +189,7 @@ describe('usage test', function () {
         var data = {
             foo: ''
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = '';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -208,7 +199,7 @@ describe('usage test', function () {
         var data = {
             foo: null
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = '';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -218,7 +209,7 @@ describe('usage test', function () {
         var data = {
             foo: undefined
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = '';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -226,7 +217,7 @@ describe('usage test', function () {
 
     it('if undefined==true', function(){
         var data = {};
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = '';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -236,7 +227,7 @@ describe('usage test', function () {
         var data = {
             foo: false
         };
-        var tpl = '{{#this.foo}}foo{{/}}';
+        var tpl = '{{?this.foo}}foo{{/}}';
         var result = '';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -246,7 +237,7 @@ describe('usage test', function () {
         var data = {
             foo: 'show'
         };
-        var tpl = '{{#this.foo === "show"}}foo{{/}}';
+        var tpl = '{{?this.foo === "show"}}foo{{/}}';
         var result = 'foo';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -256,7 +247,7 @@ describe('usage test', function () {
         var data = {
             foo: 'show'
         };
-        var tpl = '{{#this.foo !== "show"}}{{/}}';
+        var tpl = '{{?this.foo !== "show"}}{{/}}';
         var result = '';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
@@ -266,9 +257,9 @@ describe('usage test', function () {
         var data = {
             foo: false
         };
-        var tpl = '{{#this.foo}}'+
+        var tpl = '{{?this.foo}}'+
             'foo'+
-        '{{^}}'+
+        '{{:}}'+
             'boo'+
         '{{/}}';
         var result = 'boo';
@@ -276,25 +267,25 @@ describe('usage test', function () {
         expect(ec(tpl).render(data)).to.be(result);
     });
 
-    it('{{#this.number === 1}}', function(){
-        var tpl = "the number is {{#this.number === 1}}"+
+    it('{{?this.number === 1}}', function(){
+        var tpl = "the number is {{?this.number === 1}}"+
             "one"+
-        "{{^}}"+
+        "{{:}}"+
             "unknown"+
         "{{/}}";
         // console.log(ec(tpl).source);
         expect(ec(tpl).render({})).to.be('the number is unknown');
     });
 
-    it('{{#this.foo === "x"}}', function(){
+    it('{{?this.foo === "x"}}', function(){
         var data = {
             foo: 'foo'
         };
-        var tpl = '{{#this.foo === "x"}}'+
+        var tpl = '{{?this.foo === "x"}}'+
             'x'+
-        '{{^this.foo === "foo"}}'+
+        '{{:this.foo === "foo"}}'+
             'foo'+
-        '{{^}}'+
+        '{{:}}'+
             'y'+
         '{{/}}';
         var result = 'foo';
@@ -306,10 +297,15 @@ describe('usage test', function () {
         var data = {
             foo: 'foo'
         };
-        var tpl = '{{this.foo}}{{!ignore}}';
+        var tpl = '{{=this.foo}}{{!ignore}}';
         var result = 'foo';
         // console.log(ec(tpl).source);
         expect(ec(tpl).render(data)).to.be(result);
+    });
+
+    it('none tag flag', function(){
+        var tpl = '{{@this.foo}}';
+        expect(ec(tpl).render()).to.be(tpl);
     });
 
     it('partial', function(){
@@ -326,9 +322,9 @@ describe('usage test', function () {
         // }
 
         // define the 'navi' partial template
-        ec('navi', '<ul>{{#this.list item}}'+
-            '<li>{{item.text}}</li>'+
-        '{{/}}</ul>');
+        ec('<ul>{{^this.list item}}'+
+            '<li>{{=item.text}}</li>'+
+        '{{/}}</ul>', {id:'navi'});
 
         // data for slider partial template
         // {
@@ -343,9 +339,9 @@ describe('usage test', function () {
         // }
 
         // define 'slider' partial template
-        ec('slider', '<ul>{{#this.list item}}'+
-            '<li>{{item.img}}</li>'+
-        '{{/}}</ul>');
+        ec('<ul>{{^this.list item}}'+
+            '<li>{{=item.img}}</li>'+
+        '{{/}}</ul>', {id:'slider'});
 
         // group data with the same format for each part above
         var data = {
@@ -391,26 +387,17 @@ describe('usage test', function () {
         eoraptor.setDelimiter();
     });
 
-    it('function(){{{code}}}', function(){
+    it('{{{', function(){
         // 连续出现了多次'{', 应该正确的识别出靠内的表达式{{code}}
         var tpl = ec('function(){'+
-            '{{this.code}}'+
+            '{{=this.code}}'+
         '}');
-        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[];r__.push("function(){");r__.push(t__.code);r__.push("}");return r__.join("");}');
-    });
-
-    it('function(){{code}}', function(){
-        // 连续出现了多次'{', 应该正确的识别出靠内的表达式{{code}}
-        eoraptor.setDelimiter('{', '}');
-        var tpl = ec('function(){'+
-            '{this.code}'+
-        '}');
-        eoraptor.setDelimiter();
-        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[];r__.push("function(){");r__.push(t__.code);r__.push("}");return r__.join("");}');
+        // console.log(tpl.source.replace(/[\r\t\n]/g, ''));
+        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[], e__=eoraptor.escape;r__.push("function(){");r__.push(e__(t__.code));r__.push("}");return r__.join("");}');
     });
 
     it('extract from script', function(){
-        eoraptor.compile();
+        eoraptor.extract();
         expect(typeof eoraptor.t1).to.be('function');
         expect(typeof eoraptor.t2).to.be('function');
     });
@@ -478,8 +465,8 @@ describe('inner-system test', function () {
 describe('pipe filter test', function () {
 
     var t = eoraptor.compile('{{#this.list item}}{{item}}{{/}}');
-    console.log(t.source);
-    console.log(t({list: ['ccc', 'ddd']}));
+    // console.log(t.source);
+    // console.log(t({list: ['ccc', 'ddd']}));
 
 //    var pipeReg = /\s?\|\s?[a-zA-Z]+:.+)$/;
 //    var reg = /\|[a-zA-Z]+/g;
