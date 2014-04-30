@@ -32,7 +32,7 @@ The classic `hello world` example achieved through a variety of ways.
 ###### Method 1：Compiling a template from a string parameter.
 
 ```js
-var hw = eoraptor.compile("Hello {{this.name}}!");
+var hw = eoraptor.compile("Hello {{=name}}!");
 hw({"name": "world"});
 // "Hello world!"
 ```
@@ -42,7 +42,7 @@ Usually, this method is more suitable for compiling a pretty simple template.
 
 ```html
 <script type="text/x-eoraptor" id="hw">
-Hello {{this.name}}!
+Hello {{=name}}!
 </script>
 <script>
 eoraptor.extract();
@@ -99,7 +99,7 @@ The method returns a compiled `renderable` function with two properties, the `re
 Demo:
 
 ```js
-var fooTpl = eoraptor.compile('foo','{{this.foo}}');
+var fooTpl = eoraptor.compile('foo','{{=foo}}');
 // method 1
 fooTpl.render(data);
 // method 2
@@ -110,24 +110,24 @@ eoraptor.foo(data);
 
 #### Compiling templates from script tags
 
-`eoraptor.compile()` / `eoraptor.extract()`
+`eoraptor.extract()`
 
-When the `compile` method is called with zero parameter, it will get the same effect of `extract` method, that all script tags with a "text/x-eoraptor" type and an unique id property will be processed as individual template definitions.
+All script tags with a "text/x-eoraptor" type and an unique id property will be processed as individual template definitions.
 
 Demo:
 
 ```html
 <script id="sayMorning" type="text/x-eoraptor">
-Good morning, {{this.name}}!
+Good morning, {{=name}}!
 </script>
 <script id="sayAfternoon" type="text/x-eoraptor">
-Good afternoon, {{this.name}}!
+Good afternoon, {{=name}}!
 </script>
 
 <script type="text/javascript">
-eoraptor.compile();
-eoraptor.sayMorning; // "function"
-eoraptor.sayAfternoon; // "function"
+eoraptor.extract();
+typeof eoraptor.sayMorning; // "function"
+typeof eoraptor.sayAfternoon; // "function"
 </script>
 ```
 
@@ -135,7 +135,7 @@ After calling the `extract`, the script tag will be added a `compiled` attribute
 
 ```html
 <script id="sayMorning" type="text/x-eoraptor" compiled="1">
-Good morning, {{this.name}}!
+Good morning, {{=name}}!
 </script>
 ```
 
@@ -181,9 +181,9 @@ tpl.render({});
 // "" empty string
 ```
 
-#### html-escaped variable:
+#### un-escaped variable:
 
-`{{@this.key}}` / `{{@this["key"]}}`
+`{{-this.key}}` / `{{-this["key"]}}`
 
 * key: required, the direct value of the `key` in context data.
 

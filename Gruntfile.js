@@ -30,7 +30,13 @@ grunt.initConfig({
     },
     watch: {
         js: {
-            files: ['src/eoraptor.js', 'test/dev.html', 'test/dev.js'],
+            files: [
+                'src/eoraptor.js', 
+                'test/test.html', 
+                'test/test.js',
+                'test/dev.html', 
+                'test/dev.js'
+            ],
             // tasks: ['concat:js', 'uglify:js'],
             options: {
                 livereload: true,

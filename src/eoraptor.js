@@ -17,15 +17,24 @@ var eoraptor = {
     setDelimiter: setDelimiter,
     escape: escaper,
     extract: extract,
-    debug: false
+    debug: false,
+    _: {
+        e: escaper,
+        v: value
+    }
 };
 
 //var delimiterReg = /\{(?!\{\{)\{\s*(.+?)\s*\}\}/g;
 
-var THIS = 't__',
-    EMPTY = '',
+var EMPTY = '',
+    DOT = '.',
+    DATA = 'd_',
     OTAG = '{{',
     CTAG = '}}',
+    LSB = '[',
+    RSB = ']',
+    SQ = "'", // single quote
+    DQ = '"', // double quote
     SIGN = '=-/^#?:!>',
     signType = {
         '=': 1,
@@ -34,14 +43,17 @@ var THIS = 't__',
         '^': 4,
         '#': 5,
         '?': 6,
-        ':': 7,
-        '!': 8,
+        '!': 7,
+        ':': 8,
         '>': 9
     },
-    charType = {
-        'string': 0,
+    tokenType = {
         'oTag': -1,
-        'cTag': 1
+        'cTag': 1,
+        'oSB1': -2,
+        'cSB1': 2,
+        'oSB2': -3,
+        'cSB2': 3
     }
 
 // DEBUGG START
@@ -57,8 +69,8 @@ var log = {
         '4': '^',
         '5': '#',
         '6': '?',
-        '7': ':',
-        '8': '!',
+        '7': '!',
+        '8': ':',
         '9': '>'
     }
 };
@@ -75,6 +87,8 @@ var nodeEnv = typeof process === 'object' && typeof process.versions === 'object
 
 // ## compile ##
 
+var codePrefix = 'var __=eoraptor._, e_=__.e, v_=__.v;\n';
+
 // to compile a template string to callable render
 // @param {string} str a template string
 // @param {object} options optional
@@ -85,7 +99,7 @@ function compile (str, options) {
     var id;
     var render;
 
-    str = str || '';
+    str = str || EMPTY;
     options = options || {};
 
     id = options.id || str;
@@ -103,7 +117,8 @@ function compile (str, options) {
     render = function (data) {
         var result;
         try {
-            result = new Function('data', code)(data);
+
+            result = new Function('data', codePrefix + code)(data);
         } catch(err) {
             console.error('"' +err.message + '" from data and tpl below:');
             console.log(data);
@@ -118,181 +133,122 @@ function compile (str, options) {
 }
 
 function build (token) {
-    var buffer = [], code = ['var t__=data, r__=[], e__=eoraptor.escape;\n'], item;
-    for (var i=0, l=token.length; i<l; i++) {
+    var buffer = [];
+    // TODO: optimize the code prefix when in pre-compiled file.
+    var code = [
+        'var d_=data, r_=[];\n'
+        ];
+    var i, l, item;
+    for (i=0, l=token.length; i<l; i++) {
         item = token[i];
         switch (item.type) {
             case undefined:
                 buffer.push(item.str);
                 break;
             case -1:
-                code.push(makeText(buffer.join('')));
+                buffer.length && code.push(makeText(buffer.join('')));
                 buffer = [];
                 break;
-            case 1: 
+            case 1:
                 code.push(makeJS(buffer.join(''), item.sign));
                 buffer = [];
                 break;
         }
     }
-    code.push(makeText(buffer.join('')));
-    code.push('return r__.join("");');
+    buffer.length && code.push(makeText(buffer.join('')));
+    code.push('return r_.join("");');
     return code.join('');
 }
 
 // @return {array} token
 function parse (str, oTag, cTag) {
 
-    // console.log('%c'+str+' '+str.length, 'color:#fff;background-color:orange;');
+    console.log('%c'+str+' '+str.length, 'color:#fff;background-color:orange;');
     var oTag0 = oTag.charAt(0);
     var cTag0 = cTag.charAt(0);
+    var buffer = [], token = [];
     var status = {
-        buffer: [],
-        // 0: normal / -1: open / 1: close
-        // tag: 0,
-        // inTag: false,
-        // 0: normal
-        // -1: [' open
-        // 1: '] close
-        // -2: [" open
-        // 2: "] close
-        // when it's less than zero, the current char would must be within a sb.
-        // sb: 0,
-        // 0: normal
-        // "'": ['
-        // '"': ["
-        // sbQuote: 0,
-        // inSB: false,
-        // 用于告知主循环可以跨过的长度
-        jump: 0,
-        // 收集存字符串文本，tag内的不应该收集
-        // chip:'',
-        // one of FLAG's chars
-        sign:0,
-        token: [],
-        lastOTag: null
+        lastOTag: null,
+        lastOSB: null
     };
-    // initial stack entry
-    status.entry = status.token;
 
-    var i = 0, l = str.length, char;
+    var i = 0, l = str.length, char, lastOTag, lastCTag, lastOSB, lastCSB;
     for (i= 0; i<l; i++) {
         // console.log('%cindex:'+i, 'color:green;');
         char = str.charAt(i);
 
         // console.log('%cinTag: '+status.inTag+' inSB: '+status.inSB+' sign: '+status.sign, 'color:#ccc;');
-        if (char === oTag0) {
-            var lastOTag = isOTag(str, oTag, i, status)
-            if (lastOTag) {
-                status.lastOTag = lastOTag;
-                status.token.push(lastOTag);
-                i += status.jump;
-                status.jump = 0;
-                continue;
-            }
+
+        if (char === oTag0 && (lastOTag = isOTag(str, oTag, i))) {
+            status.lastOTag = lastOTag;
+            token.push(lastOTag);
+            i += lastOTag.jump;
+        } else if (status.lastOTag && char === cTag0 
+            && (lastCTag = isCTag(str, cTag, i))) {
+            lastCTag.sign = status.lastOTag.sign;
+            token.push(lastCTag);
+            status.lastOTag.type = -1;
+            status.lastOTag = null;
+            i += lastCTag.jump;
+        } else if (char === LSB && (lastOSB = isOSB(str, i))) {
+            status.lastOSB = lastOSB;
+            token.push(lastOSB);
+            i += lastOSB.jump;
+        } else if (status.lastOSB && char === status.lastOSB.quote 
+            && (lastCSB = isCSB(str, i, status.lastOSB.quote))) {
+            token.push(lastCSB);
+            // status.lastOSB.type = -2;
+            status.lastOSB = null;
+            i += lastCSB.jump;
+        } else if (char === '\\') {
+            token.push({
+                index: i,
+                str: '\\' + str.charAt(i+1)
+            });
+            i++;
+        } else {
+            token.push({
+                index: i,
+                str: char
+            });            
         }
-
-        if (char === cTag0) {
-            var lastCTag = isCTag(str, cTag, i, status);
-            if (lastCTag) {
-                status.token.push(lastCTag);
-                status.lastOTag.type = -1;
-                status.lastOTag = null;
-                i += status.jump;
-                status.jump = 0;
-                // collect(status.token, status);
-                // status.entry = status.token = [];
-                continue;
-            }
-        }
-
-        status.token.push({
-            index: i,
-            str: char
-        });
-        // if (!isInSB(status) && (char === oTag0 && isOTag(str, oTag, i, status))
-        // || (char === cTag0 && isCTag(str, cTag, i, status))) {
-        //     console.log('%c'+log.tag[status.tag]+log.sign[status.sign], 'color:#fff;background-color:red;');
-        //     i += status.jump;
-        //     make(status);
-        //     // if it is a closing tag
-        //     if (status.tag === 1) { 
-        //         status.tag = 0;
-        //         status.sign = 0;
-        //     }
-        //     resetStatus(status);
-        //     continue;
-        // }
-
-        // if (char === '[' && isOSB(str, i, status)) {
-        //     console.log('%c'+str.substr(i, 2), 'color:#fff;background-color:gray;');
-        //     status.chip += '[' + status.sbQuote;
-        //     i++;
-        //     resetStatus(status);
-        //     continue;
-        // } else if (char === status.sbQuote && isCSB(char, str, i, status)) {
-        //     console.log('%c'+str.substr(i, 2), 'color:#fff;background-color:gray;');
-        //     status.chip += status.sbQuote + ']';
-        //     i++;
-        //     status.sb = 0;
-        //     status.sbQuote = 0;
-        //     resetStatus(status);
-        //     continue;
-        // }
-
-        // status.chip += char;
-        // console.log(status.chip);
     }
     // status.chip && makeText(status);
 
     // lastCollect(status.token, status);
 
     
-    // console.log(status.token);
+    console.log(token, token.length);
     // console.log(status.code.join(''));
     // return token.join('');//.replace(/[\r\t\n]/g, empty););
-    return status.token;
+    return token;
 }
 
 // Is it the first char of an opening tag?
-function isOTag (str, oTag, index, status) {
+function isOTag (str, oTag, index) {
     var l = oTag.length, s = str.substr(index, l), sign = str.charAt(index+l);
     // NOTE 要保证sign有值 如果当前的index已经是字符串尾部 如'foo{{' sign为空
     if (oTag === s && sign &&SIGN.indexOf(sign) > -1) {
-        status.jump = l;
-
-        // status.lastOTag = {
-        //     str: s + sign,
-        //     index: index,
-        //     sign: signType[str.charAt(index+l)],
-        //     nodes: nodes
-        // };
-        // status.entry.push(status.lastOTag);
-        // status.entry = nodes;
-        // status.tag = -1;
-        // status.inTag = true;
-        // status.sign = signType[str.charAt(index+l)];
         return {
             str: s + sign,
             index: index,
-            sign: signType[str.charAt(index+l)]
+            sign: signType[str.charAt(index+l)],
+            // ignore the last oTag charts and the sign char,
+            // l(oTag.length) - 1(oTag's first char) + 1(sign's char)
+            jump: l
         };
     }
 }
 
 // Is it the first char of a closing tag?
-function isCTag (str, cTag, index, status) {
-    var s = str.substr(index, cTag.length);
-    if (cTag === s && status.lastOTag) {
-        status.jump = cTag.length - 1;
-
-        // status.tag = 1;
-        // status.inTag = false;
+function isCTag (str, cTag, index) {
+    var l = cTag.length, s = str.substr(index, l);
+    if (cTag === s) {
         return {
             str: s,
             index: index,
             type: 1,
-            sign: status.lastOTag.sign
+            jump: l - 1
         };
     }
 }
@@ -302,35 +258,27 @@ function isInTag (status) {
 }
 
 // Is it the first char of an opening square bracket expression?
-function isOSB (str, index, status) {
-    var nextChar = str.charAt(index+1);
-    if (nextChar === '"') {
-        status.sb = -2;
-        status.sbQuote = nextChar;
-    }
-    if (nextChar === "'") {
-        status.sb = -1;
-        status.sbQuote = nextChar;
-    }
-    if (status.sbQuote) {
-        status.inSB = true;
-        // status.chip += '[' + nextChar;
-        return true;
+function isOSB (str, index) {
+    var quote = str.charAt(index+1);
+    if (quote === DQ || quote === SQ) {
+        return {
+            str: LSB + quote,
+            index: index,
+            quote: quote,
+            jump: 1
+        };
     }
 }
 
 // Is it the first char of a closing square bracket expression?
-function isCSB (char, str, index, status) {
-    if (str.charAt(index+1) === ']') {
-        if (char === '"') {
-            status.sb = 2;
-        }
-        if (char === "'") {
-            status.sb = 1;
-        }
-        status.inSB = false;
-        status.jump = 1;
-        return true;
+function isCSB (str, index, quote) {
+    if (str.charAt(index+1) === RSB) {
+        return {
+            str: quote + RSB,
+            index: index,
+            quote: quote,
+            jump: 1
+        };
     }
 }
 
@@ -339,154 +287,80 @@ function isInSB (status) {
     return status.sb < 0;
 }
 
-// function collect (token, status, js) {
-//     var i=0, l=token.length, item, buffer = '';
-//     for (i; i<l; i++) {
-//         item = token[i];
-//         if (item.type === 1) {
-//             buffer += item.str;
-//         } else if (item.type === 2) {
-//             if (!js && buffer) {
-//                 status.code.push(makeText(buffer));
-//                 buffer = '';
-//             }
-//             status.code.push(makeJS(collect(item.nodes, status, true), item.sign));
-//         } else if (item.nodes) {
-//             buffer += item.str;
-//             if (!js && buffer) {
-//                 status.code.push(makeText(buffer));
-//                 buffer = '';
-//             }
-//             buffer += collect(item.nodes, status);
-//             buffer && status.code.push(makeText(buffer));
-//         }
-//     }
-//     !js && buffer && status.code.push(makeText(buffer));
-//     return buffer;
-// }
-
-// function collect (token, status, self) {
-//     var buffer = status.buffer;
-//     var i=0, l=token.length, item;
-//     for (i; i<l; i++) {
-//         item = token[i];
-
-//         if (item.type === 2) {
-//             status.code.push(makeText(buffer.join('')));
-//             buffer = [];
-//         }
-
-//         if (item.type === 1) {
-//             buffer.push(item.str);
-//         } else if (item.nodes) {
-//             buffer.push(item.str);
-//             collect(item.nodes, status, true);
-//         }
-//     }
-
-//     // !self && console.log(status.buffer);
-// }
-
-
-
-// function lastCollect (token, status, self) {
-//     var i=0, l=token.length, item, buffer = '';
-//     for (i; i<l; i++) {
-//         item = token[i];
-//         if (item.type === 1) {
-//             buffer += item.str;
-//         } else if (item.nodes) {
-//             buffer += item.str;
-//             buffer += lastCollect(item.nodes, status, true);
-//         }
-//     }
-//     !self && buffer && status.code.push(makeText(buffer));
-//     return buffer;
-// }
-
-// function make (status) {
-//     console.log('___make:', status.chip);
-
-//         // 如果刚进入tag，那么之前的chip肯定是普通字符串
-//         if (status.inTag) {
-//             makeText(status);
-//         } else {
-//             makeJS(status);
-//         }
-        
-//         status.chip = '';
-
-// }
-
-// status中除jump以为的值，需要保持值得对应的标识出现才恢复到0
-// function resetStatus (status) {
-//     status.jump = 0;
-// }
-
 function makeText (str) {
-    return 'r__.push("' + str.replace(/"/g, '\\"') + '");\n';
+    return 'r_.push("' + str.replace(/"/g, '\\"') + '");\n';
 }
 
 // TODO: check {{=this["this"]}}
-var forReg = /^t__(.+?)\s(\w+)\s?(\w+)?.*$/;
+var forReg = /^(.+?)\s(\w+)\s?(\w+)?.*$/;
 function makeJS (str, sign) {
-    var str = str.replace(thisReg, THIS);
-    // console.log('makeJS(\'%s\', %s)', str, log.sign[sign]);
+    str = trim(str);
+    console.log('makeJS(\'%s\', %s)', str, log.sign[sign]);
     var code = '';
     switch (sign) {
-        // =
+        // `=` output html-escaped value
+        // str = foo >> d_.foo
+        // str = ["f-o"] >> d_["f-o"]
         case 1:
-            code = 'r__.push(e__('+str+'));\n';
+            str = (str.charAt(0) === '&') ? str.substr(1) : joiner(str);
+            code = 'r_.push(e_(v_(' + str + ', d_)));\n';
             break;
-        // -
+        // `-` output un-escape value
         case 2:
-            code = 'r__.push('+str+');\n';
+            str = (str.charAt(0) === '&') ? str.substr(1) : joiner(str);
+            code = 'r_.push(v_(' + str + ', d_));\n';
             break;
-        // /
+        // `/` output an ending right-brace of `for` iteration
         case 3:
             code = '}\n';
             break;
-        // ^
+        // `^` beginning a `for` iteration which is used for an array data
         case 4:
             code = str.replace(forReg, function (all, list, item, key) {
-                key = key || 'k__';
-                return 'var '+key+', l=t__'+list+'.length, '+item+';\n'+
-                'for('+key+'=0; '+key+'<l; '+key+'++){\n'+
-                    item+' = t__'+list+'['+key+'];\n';
+                list = joiner(list);
+                key = key || 'k_';
+                return 'var '+key+', l_='+list+'.length, '+item+';\n'+
+                'for('+key+'=0; '+key+'<l_; '+key+'++){\n'+
+                    item+' = '+list+'['+key+'];\n';
             });
             break;
-        // #
+        // `#` beginning a `for` iteration which is used for a hash data
         case 5:
             code = str.replace(forReg, function (all, list, item, key) {
-                key = key || 'k__';
+                list = joiner(list);
+                key = key || 'k_';
                 return 'var '+key+', '+ item +';\n'+
-                'for('+key+' in t__'+list+'){\n'+
-                    'if(!t__'+list+'.hasOwnProperty('+key+')) return;\n'+
-                    item+' = t__'+list+'['+key+'];\n';
+                'for('+key+' in '+list+'){\n'+
+                    'if(!'+list+'.hasOwnProperty('+key+')) return;\n'+
+                    item+' = '+list+'['+key+'];\n';
             });
             break;
         // ?
         case 6:
-            code = 'if('+str+'){';
-            break;
-        // :
-        case 7:
-            code = str.length ? '}else if('+str+'){' : '}else{';
+            code = 'if('+joiner(str)+'){';
             break;
         // !
+        case 7:
+            code = 'if(!'+joiner(str)+'){';
+            break;
+        // :
         case 8:
-            code = '';
+            code = str.length ? '}else if('+joiner(str)+'){' : '}else{';
             break;
         // >
         case 9:
             code = str.replace(/^(\w+)\s(.+)$/, function (all, name, data) {
-                name = name.indexOf('-') > -1 ? '["'+name+'"]' : '.'+name;
-                return 'r__.push(eoraptor'+name+'.render('+data+'));\n';
+                name = name.indexOf('-') > -1 ? '["'+name+'"]' : DOT+name;
+                return 'r_.push(eoraptor'+name+'.render('+data+'));\n';
             });
             break;          
         default:
     }
     return code;
+}
+
+function joiner (str) {
+    return DATA + (str.charAt(0) !== '[' ? DOT : EMPTY) + str;
 }
 
 // ## delimiter ##
@@ -540,6 +414,11 @@ function extract() {
             script.setAttribute('compiled','1');
         }
     }
+}
+
+var FUNCTION = 'function';
+function value(v, data) {
+    return typeof v === FUNCTION ? v(data) : (v || EMPTY);
 }
 
 (typeof module != 'undefined' && module.exports) ?
