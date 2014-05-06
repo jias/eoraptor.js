@@ -27,8 +27,11 @@ eoraptor.compile();
 #### 变量
 
 ```html
-{{=this.name}} escaped
-{{-this.name}} unescaped
+{{=name}} escaped
+{{=name|uppercase}}
+{{=[first-name]}}
+{{=[first-name]|uppercase}}
+{{=~item.name}}
 ```
 
 #### if - else if - else
@@ -36,25 +39,108 @@ eoraptor.compile();
 ```html
 {{?this.status === 1}}
 
+{{?this.status === this.foo}}
+{{?status === foo}} v vs v
+
+{{?status === "foo"}} v vs str
+
+{{?status === @true|@false|@null|@undefined|@123}} v vs 
+
+{{?status === true}} if (this.status === true)
+{{?status === true}} if (this.status === this["true"])
+{{?status === "true"}} if (this.status === "true")
+{{?status === 1}} if (this.status === 1)
+{{?status === "1"}} if (this.status === "1")
+{{?status === ?}} if (this.status === this["1"])
+
+
+{{?this.status === 1}}
+
 {{:this.status === 2}}
 
 {{:}}
 
 {{/}}
+
+
+
+
+```
+
+模板只应该关心变量是什么，而不应该关心变量是怎么来的。
+
+```js
+{{?typeIs3}}
+33
+{{:typeIs4}}
+44
+{{:}}
+55
+{{/}}
+
+// render
+if (t__.typeIs3()) {
+	r__.push("33");
+} else if (t__.typeIs4()) {
+	r__.push("44");
+} else {
+	r__.push("55");
+}
+```
+
+```js
+{
+   type: 3,
+   typeIs3: function (ctx) {
+       return ctx.type === 3;
+   },
+   typeIs4: function (ctx) {
+	   return ctx.type ===4;
+   }
+}
 ```
 
 #### 遍历数组 `Array > A > ^`
 
+```js
+var data = {
+	list : [
+    	{
+        	title: xxx,
+            keywords: [xxx, xxx, ...]
+        },
+        ...
+    ]
+}
+
+<ul>
+{{^list item key}}
+	<li {{?@item.first}}class="first"{{/}}>
+		<h2>{{=item.title}}</h2>
+        {{^item.keywords word}}
+        	{{=word}}
+            {{!@word.last}},{{/}}
+        {{/}}
+    </li>
+{{/}}
+</ul>
+```
+
 ```html
-{{^this.list item key}}
+{{^list item key}}
     {{=item.name}}:{{=item.age}}
+    {{?&item.isFirst}}
+    	first
+    {{/}}
+    {{}}
+    {{=list.length}}
 {{/}}
 ```
 
 #### 遍历对象  `Hash > H > #`
 
 ```html
-{{#this.book item key}}
+{{#book item key}}
     {{=key}}:{{=item}}
 {{/}}
 ```
@@ -63,13 +149,12 @@ eoraptor.compile();
 
 ```html
 {{!xxx}}
-{{!}}
 ```
 
 #### 子模板
 
 ```html
-{{>partialName this.slider}}
+{{>partialName slider}}
 ```
 
 p1 data:
@@ -88,8 +173,8 @@ var p1 = {
 p1 template:
 
 ```html
-{{=this.options}}
-{{^this.list item key}}
+{{=options}}
+{{^list item key}}
 	{{=item.name}}
 {{/}}
 ```
@@ -110,8 +195,8 @@ var p1 = {
 p2 template:
 
 ```html
-{{=this.setting}}
-{{^this.list item key}}
+{{=setting}}
+{{^list item key}}
 	{{=item.name}}
 {{/}}
 ```
@@ -139,8 +224,8 @@ var p1_2 = {
 ```
 
 ```html
-{{>p1 this.p1 options=this.setting}}
-{{>p1 this.p2 setting=this.setting}}
+{{>p1 p1 options=setting}}
+{{>p1 p2 setting=setting}}
 ```
 
 #### 管道
