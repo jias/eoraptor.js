@@ -1,9 +1,10 @@
 {
+  "family": "gnosaij",
   "name": "eoraptor.js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.",
   "homepage": "http://jias.github.io/eoraptor.js/",
-  "main": "src/eoraptor.js",
+  "main": "build/eoraptor.js",
   "scripts": {},
   "keywords": [
     "javascript",
@@ -12,7 +13,7 @@
     "eoraptor"
   ],
   "author": {
-    "name": "gnosaij",
+    "name": "gnosaij|fushan",
     "email": "gnosaij@yeah.net",
     "url": "http://jias.github.io/"
   },

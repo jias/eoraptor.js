@@ -4,200 +4,404 @@
  * Licensed under MIT (https://github.com/Jias/eoraptor.js/blob/master/LICENSE)
  * A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.
  * @author gnosaij | http://jias.github.io | http://www.joy-studio.com
- * @version 0.1.1
- * @update 2014-04-15
+ * @version 0.1.2
+ * @update 2014-05-13
  * @link http://www.joy-studio.com/javascript/my-eoraptorjs-template-engine-in-javascript.html
  */
 (function(glob) {
 
-var delimiterReg = /\{(?!\{\{)\{\s*(.+?)\s*\}\}/g;
-
 var eoraptor = {
     name: 'eoraptor.js',
-    version: '0.1.1',
+    version: '0.1.2',
     compile: compile,
+    setDelimiter: setDelimiter,
     escape: escaper,
     extract: extract,
-    setDelimiter: setDelimiter
+    debug: false,
+    _: {
+        e: escaper,
+        v: value
+    }
 };
 
-var thisReg = /\bthis\b/g,
-    thisAlt = 't__',
-    flags = '#^/@!>',
-    eachReg = /^t__(.+?)\s(\w+)\s?(\w+)?.*$/, // see unit test
-    escapeReg = /[&<>"']/g,
-    empty = '',
-    escapeMap = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#x27;'
+//var delimiterReg = /\{(?!\{\{)\{\s*(.+?)\s*\}\}/g;
+
+var EMPTY = '',
+    DOT = '.',
+    DATA = 'd_',
+    OTAG = '{{',
+    CTAG = '}}',
+    LSB = '[',
+    RSB = ']',
+    SQ = "'", // single quote
+    DQ = '"', // double quote
+    SIGN = '=-/^#?:!>',
+    signType = {
+        '=': 1,
+        '-': 2,
+        '/': 3,
+        '^': 4,
+        '#': 5,
+        '?': 6,
+        '!': 7,
+        ':': 8,
+        '>': 9
     },
-    trim = empty.trim ? function (str) {
+    tokenType = {
+        'oTag': -1,
+        'cTag': 1,
+        'oSB1': -2,
+        'cSB1': 2,
+        'oSB2': -3,
+        'cSB2': 3
+    }
+
+// DEBUGG START
+var log = {
+    tag: {
+        '-1': '{{',
+        '1': '}}'
+    },
+    sign: {
+        '1': '=',
+        '2': '-',
+        '3': '/',
+        '4': '^',
+        '5': '#',
+        '6': '?',
+        '7': '!',
+        '8': ':',
+        '9': '>'
+    }
+};
+// DEBUGG END
+
+var nodeEnv = typeof process === 'object' && typeof process.versions === 'object',
+    thisReg = /\bthis\b/g,
+
+    trim = EMPTY.trim ? function (str) {
         return str.trim();
     } : function (str) {
-        return str.replace(/^\s+/, empty).replace(/\s+$/, empty);
+        return str.replace(/^\s+/, EMPTY).replace(/\s+$/, EMPTY);
     };
 
-function compile() {
-    var args = arguments, name, tpl;
-    
-    if (args.length === 2) {
-        name = args[0];
-        tpl = args[1];
-    } else if (args.length === 1) {
-        name = tpl = args[0];
-    } else {
-        extract();
-        return;
+// ## compile ##
+
+var codePrefix = 'var __=eoraptor._, e_=__.e, v_=__.v;\n';
+
+// to compile a template string to callable render
+// @param {string} str a template string
+// @param {object} options optional
+// @param {string} options.id the unique name for the template
+// @param {string} options.oTag set a one-off opening tag
+// TODO oTag cTag
+function compile (str, options) {
+    var id;
+    var render;
+
+    str = str || EMPTY;
+    options = options || {};
+
+    id = options.id || str;
+
+    render = eoraptor[id];
+    if (render) {
+        return render;
     }
 
-    if (eoraptor[name]) {
-        return eoraptor[name];
-    }
+    var oTag = options.oTag || OTAG;
+    var cTag = options.cTag || CTAG;
 
-    var match = null,
-        code = 'var t__=data, r__=[];\n',
-        pos = 0;
+    var code = build(parse(str, oTag, cTag));
 
-    while(match = delimiterReg.exec(tpl)) {
-        code += parseString(tpl.slice(pos, match.index));
-        code += parseJS(match[1], true);
-        pos = match.index + match[0].length;
-    }
-
-    code += parseString(tpl.substr(pos, tpl.length - pos));
-
-    code = (code + 'return r__.join("");');//.replace(/[\r\t\n]/g, empty);
-
-    var render = function (data) {
+    render = function (data) {
         var result;
         try {
-            result = new Function('data', 'var e__=eoraptor.escape;' + code)(data);
+
+            result = new Function('data', codePrefix + code)(data);
         } catch(err) {
-            console.error(err.message + " from data and tpl below:");
+            console.error('"' +err.message + '" from data and tpl below:');
             console.log(data);
-            console.log(tpl);
+            console.log(str);
         }
-        return result;            
+        return result;
     };
 
     render.render = render;
     render.source = 'function (data) {\n' + code + '\n}';
-    return eoraptor[name] = render;
-} // compile
-
-var squareBracketReg = /[\[\]]/g,
-    quoteContentReg = /(?:"(.*?)")/g,
-    quoteContentReg2 = /(?:'(.*?)')/g,
-    squareBracketAndContentReg = /(\[.*?\])/g,
-    parenthesesAndContentReg = /(\(.*?\))/g,
-    ifReg = /^[^\s]+\s*([!=><]{1,3}\s*[^\s]+)?$/,
-    squareBracketRemover = function (all, match) {
-        return match.replace(squareBracketReg, empty);
-    };
-
-// console.log(isIf('a("ab==0")')); => true
-// console.log(isIf("a['[122 '] === b[ '55]' ]")); => true
-// step1. delete '[' and ']' between "" and ''
-// step2. delete '[xxx]'
-// step3. delete '(xxx)'
-function isIf (str) {
-    str = str.replace(quoteContentReg, squareBracketRemover)
-        .replace(quoteContentReg2, squareBracketRemover)
-        .replace(squareBracketAndContentReg, empty)
-        .replace(parenthesesAndContentReg, empty);
-    return ifReg.test(str);
+    return eoraptor[id] = render;
 }
 
-function setDelimiter(start, end) {
-    start = start || '{{';
-    end = end || '}}';
-    delimiterReg = new RegExp(
-        escapeDelimiter(start.charAt(0))+ 
-        '(?!'+escapeDelimiter(start)+')'+
-        escapeDelimiter(start.substr(1))+ 
-        '\\s*(.+?)\\s*'+ 
-        escapeDelimiter(end)
-    , 'g');
+function build (token) {
+    var buffer = [];
+    // TODO: optimize the code prefix when in pre-compiled file.
+    var code = [
+        'var d_=data, r_=[];\n'
+        ];
+    var i, l, item;
+    for (i=0, l=token.length; i<l; i++) {
+        item = token[i];
+        switch (item.type) {
+            case undefined:
+                buffer.push(item.str);
+                break;
+            case -1:
+                buffer.length && code.push(makeText(buffer.join('')));
+                buffer = [];
+                break;
+            case 1:
+                code.push(makeJS(buffer.join(''), item.sign));
+                buffer = [];
+                break;
+        }
+    }
+    buffer.length && code.push(makeText(buffer.join('')));
+    code.push('return r_.join("");');
+    return code.join('');
+}
+
+// @return {array} token
+function parse (str, oTag, cTag) {
+
+    // console.log('%c'+str+' '+str.length, 'color:#fff;background-color:orange;');
+    var oTag0 = oTag.charAt(0);
+    var cTag0 = cTag.charAt(0);
+    var buffer = [], token = [];
+    var status = {
+        lastOTag: null,
+        lastOSB: null
+    };
+
+    var i = 0, l = str.length, char, lastOTag, lastCTag, lastOSB, lastCSB;
+    for (i= 0; i<l; i++) {
+        // console.log('%cindex:'+i, 'color:green;');
+        char = str.charAt(i);
+
+        // console.log('%cinTag: '+status.inTag+' inSB: '+status.inSB+' sign: '+status.sign, 'color:#ccc;');
+
+        if (char === oTag0 && (lastOTag = isOTag(str, oTag, i))) {
+            status.lastOTag = lastOTag;
+            token.push(lastOTag);
+            i += lastOTag.jump;
+        } else if (status.lastOTag && char === cTag0 
+            && (lastCTag = isCTag(str, cTag, i))) {
+            lastCTag.sign = status.lastOTag.sign;
+            token.push(lastCTag);
+            status.lastOTag.type = -1;
+            status.lastOTag = null;
+            i += lastCTag.jump;
+        } else if (char === LSB && (lastOSB = isOSB(str, i))) {
+            status.lastOSB = lastOSB;
+            token.push(lastOSB);
+            i += lastOSB.jump;
+        } else if (status.lastOSB && char === status.lastOSB.quote 
+            && (lastCSB = isCSB(str, i, status.lastOSB.quote))) {
+            token.push(lastCSB);
+            // status.lastOSB.type = -2;
+            status.lastOSB = null;
+            i += lastCSB.jump;
+        } else if (char === '\\') {
+            token.push({
+                index: i,
+                str: '\\' + str.charAt(i+1)
+            });
+            i++;
+        } else {
+            token.push({
+                index: i,
+                str: char
+            });            
+        }
+    }
+    // status.chip && makeText(status);
+
+    // lastCollect(status.token, status);
+
+    
+    // console.log(token, token.length);
+    // console.log(status.code.join(''));
+    // return token.join('');//.replace(/[\r\t\n]/g, empty););
+    return token;
+}
+
+// Is it the first char of an opening tag?
+function isOTag (str, oTag, index) {
+    var l = oTag.length, s = str.substr(index, l), sign = str.charAt(index+l);
+    // NOTE 要保证sign有值 如果当前的index已经是字符串尾部 如'foo{{' sign为空
+    if (oTag === s && sign &&SIGN.indexOf(sign) > -1) {
+        return {
+            str: s + sign,
+            index: index,
+            sign: signType[str.charAt(index+l)],
+            // ignore the last oTag charts and the sign char,
+            // l(oTag.length) - 1(oTag's first char) + 1(sign's char)
+            jump: l
+        };
+    }
+}
+
+// Is it the first char of a closing tag?
+function isCTag (str, cTag, index) {
+    var l = cTag.length, s = str.substr(index, l);
+    if (cTag === s) {
+        return {
+            str: s,
+            index: index,
+            type: 1,
+            jump: l - 1
+        };
+    }
+}
+
+function isInTag (status) {
+    return status.tag < 0;
+}
+
+// Is it the first char of an opening square bracket expression?
+function isOSB (str, index) {
+    var quote = str.charAt(index+1);
+    if (quote === DQ || quote === SQ) {
+        return {
+            str: LSB + quote,
+            index: index,
+            quote: quote,
+            jump: 1
+        };
+    }
+}
+
+// Is it the first char of a closing square bracket expression?
+function isCSB (str, index, quote) {
+    if (str.charAt(index+1) === RSB) {
+        return {
+            str: quote + RSB,
+            index: index,
+            quote: quote,
+            jump: 1
+        };
+    }
+}
+
+// Is the status on a position between the square bracket expression?
+function isInSB (status) {
+    return status.sb < 0;
+}
+
+function makeText (str) {
+    return 'r_.push("' + str.replace(/"/g, '\\"') + '");\n';
+}
+
+// TODO: check {{=this["this"]}}
+var forReg = /^(.+?)\s(\w+)\s?(\w+)?.*$/;
+function makeJS (str, sign) {
+    str = trim(str);
+    // console.log('makeJS(\'%s\', %s)', str, log.sign[sign]);
+    var code = '';
+    switch (sign) {
+        // `=` output html-escaped value
+        // str = foo >> d_.foo
+        // str = ["f-o"] >> d_["f-o"]
+        case 1:
+            str = (str.charAt(0) === '&') ? str.substr(1) : joiner(str);
+            code = 'r_.push(e_(v_(' + str + ', d_)));\n';
+            break;
+        // `-` output un-escape value
+        case 2:
+            str = (str.charAt(0) === '&') ? str.substr(1) : joiner(str);
+            code = 'r_.push(v_(' + str + ', d_));\n';
+            break;
+        // `/` output an ending right-brace of `for` iteration
+        case 3:
+            code = '}\n';
+            break;
+        // `^` beginning a `for` iteration which is used for an array data
+        case 4:
+            code = str.replace(forReg, function (all, list, item, key) {
+                list = joiner(list);
+                key = key || 'k_';
+                return 'var '+key+', l_='+list+'.length, '+item+';\n'+
+                'for('+key+'=0; '+key+'<l_; '+key+'++){\n'+
+                    item+' = '+list+'['+key+'];\n';
+            });
+            break;
+        // `#` beginning a `for` iteration which is used for a hash data
+        case 5:
+            code = str.replace(forReg, function (all, list, item, key) {
+                list = joiner(list);
+                key = key || 'k_';
+                return 'var '+key+', '+ item +';\n'+
+                'for('+key+' in '+list+'){\n'+
+                    'if(!'+list+'.hasOwnProperty('+key+')) return;\n'+
+                    item+' = '+list+'['+key+'];\n';
+            });
+            break;
+        // ?
+        case 6:
+            code = 'if('+joiner(str)+'){';
+            break;
+        // !
+        case 7:
+            code = 'if(!'+joiner(str)+'){';
+            break;
+        // :
+        case 8:
+            code = str.length ? '}else if('+joiner(str)+'){' : '}else{';
+            break;
+        // >
+        case 9:
+            code = str.replace(/^(\w+)\s(.+)$/, function (all, name, data) {
+                name = name.indexOf('-') > -1 ? '["'+name+'"]' : DOT+name;
+                return 'r_.push(eoraptor'+name+'.render('+data+'));\n';
+            });
+            break;          
+        default:
+    }
+    return code;
+}
+
+function joiner (str) {
+    return DATA + (str.charAt(0) !== '[' ? DOT : EMPTY) + str;
+}
+
+// ## delimiter ##
+
+// init delimiter
+
+// to make a new deliliter with the given opening tag and closing tag
+// @param {string} oTag opening tag
+// @param {string} cTag closing tag
+function setDelimiter(oTag, cTag) {
+    oTag = oTag || '{{';
+    cTag = cTag || '}}';
 }
 
 function escapeDelimiter(str) {
     return str.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
 }
 
-// replacer callback for escaper
+// ## escaper ##
+
+var escapeReg = /[&<>"']/g,
+    escapeMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;'
+    };
+
+// callback for escaper replacement
 function escapeCallback(match) {
     return escapeMap[match];
 }
 
 // escape html chars
 // NOTE: 'escape' is reserved word in javascript
-function escaper(string) {
-    return string == null ? empty : empty + string.replace(escapeReg, escapeCallback);
+function escaper(str) {
+    return str == null ? EMPTY : EMPTY + String(str).replace(escapeReg, escapeCallback);
 }
 
-function parseJS(str) {
-
-    // turn 'this'(point to data) to 't__' globally
-    str = str.replace(thisReg, thisAlt);
-
-    var firstChar = str[0];
-
-    if (flags.indexOf(firstChar) === -1) {
-        return 'r__.push(' + str + ');\n';
-    } 
-
-    var code = empty;
-
-    // @foo => foo
-    str = str.substr(1);
-    switch (firstChar) {
-        case '@':
-            code ='r__.push(e__(' + str + '));\n';
-            break;
-        case '#':
-            if (isIf(str)) {
-                code = 'if('+str+'){\n';
-            } else {
-                code = str.replace(eachReg, function (all, list, value, key) {
-                    key = key || 'k__';
-                    return 'var '+key+', '+ value +';\n'+
-                    'for('+key+' in t__'+list+'){\n'+
-                        'if(!t__'+list+'.hasOwnProperty('+key+')) return;\n'+
-                        value+' = t__'+list+'['+key+'];\n';
-                });
-            }
-            break;
-        case '^':
-            if (!str) {
-                code = '}else{\n';
-            } else {
-                code = '}else if('+str+'){\n';
-            }
-            break;
-        case '/':
-            code = '}\n';
-            break;
-        case '>':
-            code = str.replace(/^(\w+)\s(.+)$/, function (all, name, data) {
-                name = name.indexOf('-') > -1 ? '["'+name+'"]' : '.'+name;
-                return 'r__.push(eoraptor'+name+'.render('+data+'));\n';
-            });
-            break;
-        case '!':
-            break;
-        default:
-            break;
-    }
-        
-    return code;
-}
-
-function parseString (str) {
-    return str != empty ? 'r__.push("' + str.replace(/"/g, '\\"') + '");\n' : empty;
-}
+// ## escaper ##
 
 // get templates from the script tags in document.
 function extract() {
@@ -210,6 +414,11 @@ function extract() {
             script.setAttribute('compiled','1');
         }
     }
+}
+
+var FUNCTION = 'function';
+function value(v, data) {
+    return typeof v === FUNCTION ? v(data) : (v || EMPTY);
 }
 
 (typeof module != 'undefined' && module.exports) ?

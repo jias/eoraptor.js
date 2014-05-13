@@ -163,7 +163,7 @@ function build (token) {
 // @return {array} token
 function parse (str, oTag, cTag) {
 
-    console.log('%c'+str+' '+str.length, 'color:#fff;background-color:orange;');
+    // console.log('%c'+str+' '+str.length, 'color:#fff;background-color:orange;');
     var oTag0 = oTag.charAt(0);
     var cTag0 = cTag.charAt(0);
     var buffer = [], token = [];
@@ -218,7 +218,7 @@ function parse (str, oTag, cTag) {
     // lastCollect(status.token, status);
 
     
-    console.log(token, token.length);
+    // console.log(token, token.length);
     // console.log(status.code.join(''));
     // return token.join('');//.replace(/[\r\t\n]/g, empty););
     return token;
@@ -295,7 +295,7 @@ function makeText (str) {
 var forReg = /^(.+?)\s(\w+)\s?(\w+)?.*$/;
 function makeJS (str, sign) {
     str = trim(str);
-    console.log('makeJS(\'%s\', %s)', str, log.sign[sign]);
+    // console.log('makeJS(\'%s\', %s)', str, log.sign[sign]);
     var code = '';
     switch (sign) {
         // `=` output html-escaped value
