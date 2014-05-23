@@ -1,5 +1,7 @@
 # eoraptor.js
 
+# 文档是旧的！！！ 最新的使用方法请移步test/test.js
+
 A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.
 
 ## Features
