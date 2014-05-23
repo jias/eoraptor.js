@@ -4,17 +4,17 @@
  * Licensed under MIT (https://github.com/Jias/eoraptor.js/blob/master/LICENSE)
  * A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.
  * @author gnosaij | http://jias.github.io | http://www.joy-studio.com
- * @version 0.1.2
- * @update 2014-05-13
+ * @version 0.1.8
+ * @update 2014-05-20
  * @link http://www.joy-studio.com/javascript/my-eoraptorjs-template-engine-in-javascript.html
  */
 (function(glob) {
 
 var eoraptor = {
-    name: 'eoraptor.js',
-    version: '0.1.2',
+    name: 'eoraptorjs',
+    version: '0.1.8',
     compile: compile,
-    setDelimiter: setDelimiter,
+    // setDelimiter: setDelimiter,
     escape: escaper,
     extract: extract,
     debug: false,
@@ -23,6 +23,8 @@ var eoraptor = {
         v: value
     }
 };
+
+var cid = 0;
 
 //var delimiterReg = /\{(?!\{\{)\{\s*(.+?)\s*\}\}/g;
 
@@ -87,7 +89,7 @@ var nodeEnv = typeof process === 'object' && typeof process.versions === 'object
 
 // ## compile ##
 
-var codePrefix = 'var __=eoraptor._, e_=__.e, v_=__.v;\n';
+var codePrefix = 'var ns=eoraptor, __=ns._, e_=__.e, v_=__.v;\n';
 
 // to compile a template string to callable render
 // @param {string} str a template string
@@ -138,7 +140,7 @@ function build (token) {
     var code = [
         'var d_=data, r_=[];\n'
         ];
-    var i, l, item;
+    var i, l, item, sign, trimedBuffer;
     for (i=0, l=token.length; i<l; i++) {
         item = token[i];
         switch (item.type) {
@@ -150,7 +152,15 @@ function build (token) {
                 buffer = [];
                 break;
             case 1:
-                code.push(makeJS(buffer.join(''), item.sign));
+                sign = item.sign;
+                trimedBuffer = trim(buffer.join(''));
+                // 只有/和:允许内容为空
+                if (!trimedBuffer && sign !== '/' && sign !== ':') {
+                    // TODO: 这里写死了oTag和cTag，要换成可配置的值
+                    code.push(makeText('{{'+sign+buffer.join('')+'}}'));
+                } else {
+                    code.push(makeJS(trimedBuffer, sign));
+                }
                 buffer = [];
                 break;
         }
@@ -228,11 +238,12 @@ function parse (str, oTag, cTag) {
 function isOTag (str, oTag, index) {
     var l = oTag.length, s = str.substr(index, l), sign = str.charAt(index+l);
     // NOTE 要保证sign有值 如果当前的index已经是字符串尾部 如'foo{{' sign为空
-    if (oTag === s && sign &&SIGN.indexOf(sign) > -1) {
+    if (oTag === s && sign && SIGN.indexOf(sign) > -1) {
         return {
             str: s + sign,
             index: index,
-            sign: signType[str.charAt(index+l)],
+            // sign: signType[str.charAt(index+l)], // TODO: delete
+            sign: str.charAt(index+l),
             // ignore the last oTag charts and the sign char,
             // l(oTag.length) - 1(oTag's first char) + 1(sign's char)
             jump: l
@@ -294,64 +305,72 @@ function makeText (str) {
 // TODO: check {{=this["this"]}}
 var forReg = /^(.+?)\s(\w+)\s?(\w+)?.*$/;
 function makeJS (str, sign) {
-    str = trim(str);
     // console.log('makeJS(\'%s\', %s)', str, log.sign[sign]);
     var code = '';
+
+    
     switch (sign) {
         // `=` output html-escaped value
-        // str = foo >> d_.foo
-        // str = ["f-o"] >> d_["f-o"]
-        case 1:
-            str = (str.charAt(0) === '&') ? str.substr(1) : joiner(str);
+        // str        code
+        // ————————————————————
+        // foo        d_.foo 
+        // ["f-o"]    d_["f-o"]
+        // &foo       foo
+        // &["f-o"]   window["f-o"]   !!!TODO!!!
+        case '=':
+            str = joiner(str);
             code = 'r_.push(e_(v_(' + str + ', d_)));\n';
             break;
         // `-` output un-escape value
-        case 2:
-            str = (str.charAt(0) === '&') ? str.substr(1) : joiner(str);
+        case '-':
+            str = joiner(str);
             code = 'r_.push(v_(' + str + ', d_));\n';
             break;
         // `/` output an ending right-brace of `for` iteration
-        case 3:
+        case '/':
             code = '}\n';
             break;
         // `^` beginning a `for` iteration which is used for an array data
-        case 4:
+        case '^':
             code = str.replace(forReg, function (all, list, item, key) {
                 list = joiner(list);
-                key = key || 'k_';
-                return 'var '+key+', l_='+list+'.length, '+item+';\n'+
-                'for('+key+'=0; '+key+'<l_; '+key+'++){\n'+
+                key = key || 'k'+ cid +'_';
+                return 'var '+key+', l'+ cid +'_='+list+'.length, '+item+';\n'+
+                'for('+key+'=0; '+key+'<l'+ cid +'_; '+key+'++){\n'+
                     item+' = '+list+'['+key+'];\n';
             });
+            cid++;
             break;
         // `#` beginning a `for` iteration which is used for a hash data
-        case 5:
+        case '#':
             code = str.replace(forReg, function (all, list, item, key) {
                 list = joiner(list);
-                key = key || 'k_';
+                key = key || 'k'+ cid +'_';
                 return 'var '+key+', '+ item +';\n'+
                 'for('+key+' in '+list+'){\n'+
                     'if(!'+list+'.hasOwnProperty('+key+')) return;\n'+
                     item+' = '+list+'['+key+'];\n';
             });
+            cid++;
             break;
         // ?
-        case 6:
+        case '?':
             code = 'if('+joiner(str)+'){';
             break;
         // !
-        case 7:
+        case '!':
             code = 'if(!'+joiner(str)+'){';
             break;
         // :
-        case 8:
+        case ':':
             code = str.length ? '}else if('+joiner(str)+'){' : '}else{';
             break;
         // >
-        case 9:
-            code = str.replace(/^(\w+)\s(.+)$/, function (all, name, data) {
+        case '>':
+            code = str.replace(/^(\w+)(?:\s(.+))?$/, function (all, name, dataKey) {
                 name = name.indexOf('-') > -1 ? '["'+name+'"]' : DOT+name;
-                return 'r_.push(eoraptor'+name+'.render('+data+'));\n';
+                dataKey = dataKey ? joiner(dataKey) : 'd_';
+                return 'r_.push(ns'+name+'('+dataKey+'));\n';
             });
             break;          
         default:
@@ -360,7 +379,13 @@ function makeJS (str, sign) {
 }
 
 function joiner (str) {
-    return DATA + (str.charAt(0) !== '[' ? DOT : EMPTY) + str;
+    var ret;
+    if (str.charAt(0) === '&') {
+        ret = str.substr(1)
+    } else {
+        ret = DATA + (str.charAt(0) !== '[' ? DOT : EMPTY) + str;
+    }
+    return ret;
 }
 
 // ## delimiter ##
@@ -370,14 +395,14 @@ function joiner (str) {
 // to make a new deliliter with the given opening tag and closing tag
 // @param {string} oTag opening tag
 // @param {string} cTag closing tag
-function setDelimiter(oTag, cTag) {
-    oTag = oTag || '{{';
-    cTag = cTag || '}}';
-}
+// function setDelimiter(oTag, cTag) {
+//     oTag = oTag || '{{';
+//     cTag = cTag || '}}';
+// }
 
-function escapeDelimiter(str) {
-    return str.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
-}
+// function escapeDelimiter(str) {
+//     return str.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
+// }
 
 // ## escaper ##
 
@@ -418,7 +443,7 @@ function extract() {
 
 var FUNCTION = 'function';
 function value(v, data) {
-    return typeof v === FUNCTION ? v(data) : (v || EMPTY);
+    return typeof v === FUNCTION ? v.apply(data, [data]) : (v || EMPTY);
 }
 
 (typeof module != 'undefined' && module.exports) ?

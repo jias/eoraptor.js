@@ -42,13 +42,27 @@ grunt.initConfig({
                 livereload: true,
             }
         }
+    },
+    eoraptor_jst: {
+        cmd: {
+            options: {
+                namespace: 'tpl',
+                module: false,
+                ext: 'tpl.html'
+            },
+            files: {
+                'tpl/tpl.js': ['tpl/*.tpl.html']
+            },
+        }
     }
 });
 
 grunt.loadNpmTasks('grunt-contrib-uglify');
 grunt.loadNpmTasks('grunt-text-replace');
 grunt.loadNpmTasks('grunt-contrib-watch');
+grunt.loadNpmTasks('eoraptor-jst');
 
 grunt.registerTask('default', ['replace','uglify']);
+grunt.registerTask('tpl', ['eoraptor_jst']);
 
 };

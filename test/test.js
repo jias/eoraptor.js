@@ -1,7 +1,59 @@
 function xit () {}
 function xdescribe() {}
-describe('usage test', function () {
-    var ec = eoraptor.compile;
+var ec = eoraptor.compile;
+
+describe('no expression', function () {
+    it('a', function(){
+        var tpl = ec('a');
+        expect(tpl.render({})).to.be('a');
+    });
+    it('"a "', function(){
+        var tpl = ec('a ');
+        expect(tpl.render({})).to.be('a ');
+    });
+    it('" a"', function(){
+        var tpl = ec(' a');
+        expect(tpl.render({})).to.be(' a');
+    });
+    it('" a "', function(){
+        var tpl = ec(' a ');
+        expect(tpl.render({})).to.be(' a ');
+    });
+    it('"{{=a"', function() {
+        var tpl = ec('{{=a');
+        expect(tpl.render({})).to.be('{{=a');
+    });
+    it('"a{{="', function() {
+        var tpl = ec('a{{=');
+        expect(tpl.render({})).to.be('a{{=');
+    });
+    it('"{{=a{{="', function() {
+        var tpl = ec('{{=a{{=');
+        expect(tpl.render({})).to.be('{{=a{{=');
+    });
+    it('"}}a"', function() {
+        var tpl = ec('}}a');
+        expect(tpl.render({})).to.be('}}a');
+    });
+    it('"a}}"', function() {
+        var tpl = ec('a}}');
+        expect(tpl.render({})).to.be('a}}');
+    });
+    it('"{{=}}"', function() {
+        var tpl = ec('{{=}}');
+        console.log(tpl.source);
+        expect(tpl.render({})).to.be('{{=}}');
+    });
+    it('"{{= }}"', function() {
+        var tpl = ec('{{= }}');
+        console.log(tpl.source);
+        expect(tpl.render({})).to.be('{{= }}');
+    });
+});
+
+
+
+describe('variable', function () {
 
     beforeEach(function () {
         // eoraptor.cache = {};
@@ -11,15 +63,54 @@ describe('usage test', function () {
     //     // console.log(JSON.stringify(eoraptor.cache));
     // });
 
-    it('no expression: foo', function(){
-        var tpl = ec('foo');
-        expect(tpl.render({})).to.be('foo');
+
+
+
+    // it('eoraptor.a.source', function(){
+    //     var tpl = ec('a', {id:'aTpl'});
+    //     expect(tpl.source).to.be(eoraptor.aTpl.source);
+    // });
+
+    it('"{{=a}}"', function(){
+        var tpl = ec('{{=a}}');
+        var ret = tpl({a:'v'});
+        expect(ret).to.be('v');
     });
-    it(' no expression: " foo "', function(){
-        var tpl = ec(' foo ');
-        expect(tpl.render({})).to.be(' foo ');
+    it('"{{= a }}"', function(){
+        var tpl = ec('{{= a }}');
+        var ret = tpl({a:'v'});
+        expect(ret).to.be('v');
     });
-    it('variable: a{{=b{{=c}}', function(){
+    it('"{{=["a"]}}"', function(){
+        var tpl = ec('{{=["a"]}}');
+        var ret = tpl({
+            a: 'v'
+        });
+        expect(ret).to.be('v');
+    });
+    it('"{{=[\'a\']}}"', function(){
+        var tpl = ec("{{=['a']}}");
+        var ret = tpl({
+            a: 'v'
+        });
+        expect(ret).to.be('v');
+    });
+
+    it('quote escaped in template, "{{=["a\\\"a"]}}"', function(){
+        var tpl = ec('{{=["a\\\"a"]}}');
+        var ret = tpl({
+            'a"a': 'v'
+        });
+        expect(ret).to.be('v');
+    });
+    it('"-" in template, {{=["first-name"]}}', function(){
+        var tpl = ec('{{=["first-name"]}}');
+        var ret = tpl({'first-name':'a'});
+        expect(ret).to.be('a');
+    });
+
+
+    it('"a{{=b{{=c}}"', function(){
         var tpl = ec('a{{=b{{=c}}');
         var ret = tpl({
             c: 'c'
@@ -27,114 +118,81 @@ describe('usage test', function () {
         expect(ret).to.be('a{{=bc');
     });
 
-
-    it('eoraptor.foo.source', function(){
-        var tpl = ec('foo', {id:'fooTpl'});
-        expect(tpl.source).to.be(eoraptor.fooTpl.source);
+    it('"{{{=a}}"', function(){
+        var tpl = ec('{{{=a}}');
+        var ret = tpl({a:'v'});
+        expect(ret).to.be('{v');
     });
 
-    it('variable: {{=foo}}', function(){
-        var tpl = ec('{{=foo}}');
-        var ret = tpl({foo:'v'});
-        expect(ret).to.be('v');
-    });
-    it('variable: {{= foo }}', function(){
-        var tpl = ec('{{= foo }}');
-        var ret = tpl({foo:'v'});
-        expect(ret).to.be('v');
-    });
-    it('variable: {{=["foo"]}}', function(){
-        var tpl = ec('{{=["foo"]}}');
+    it('"{{=a.b}}"', function(){
+        var tpl = ec('{{=a.b}}');
         var ret = tpl({
-            foo: 'v'
-        });
-        expect(ret).to.be('v');
-    });
-    it("variable: {{=['foo']}}", function(){
-        var tpl = ec("{{=['foo']}}");
-        var ret = tpl({
-            foo: 'v'
+            a: { b: 'v' }
         });
         expect(ret).to.be('v');
     });
 
-    it('variable: {{=["foo\\\"foo"]}}', function(){
-        var tpl = ec('{{=["foo\\\"foo"]}}');
-        var ret = tpl({
-            'foo"foo': 'v'
-        });
-        expect(ret).to.be('v');
-    });
-    it('key with "-": {{=["first-name"]}}', function(){
-        var tpl = ec('{{=["first-name"]}}');
-        var ret = tpl({'first-name':'foo'});
-        expect(ret).to.be('foo');
-    });
-
-
-    it('variable: "{{=foo.boo}}"', function(){
-        var tpl = ec('{{=foo.boo}}');
-        var ret = tpl({
-            foo: { boo: 'v' }
-        });
-        expect(ret).to.be('v');
-    });
-
-    it('{{=foo}}, no such key', function(){
-        var tpl = ec('{{=foo}}');
+    it('key is missing', function(){
+        var tpl = ec('{{=a}}');
         var ret = tpl({});
         expect(ret).to.be('');
     });
 
-    it('escape', function(){
-        var tpl = ec('{{=foo}}');
-        var ret = tpl({foo: 'hello "eoraptor"'});
+    it('output escaped value', function(){
+        var tpl = ec('{{=a}}');
+        var ret = tpl({a: 'hello "eoraptor"'});
         expect(ret).to.be('hello &quot;eoraptor&quot;');
     });
 
-    it('no-escape', function(){
-        var tpl = ec('{{-foo}}');
-        var ret = tpl({foo: 'hello "eoraptor"'});
+    it('output unescaped value', function(){
+        var tpl = ec('{{-a}}');
+        var ret = tpl({a: 'hello "eoraptor"'});
         expect(ret).to.be('hello "eoraptor"');
     });
 
-    it('html', function(){
-        var tpl = ec('{{-foo}}');
-        var ret = tpl({foo:'<h1>foo</h1>'});
-        expect(ret).to.be('<h1>foo</h1>');
+    it('output unescaped value: html', function(){
+        var tpl = ec('{{-a}}');
+        var ret = tpl({a:'<h1>a</h1>'});
+        expect(ret).to.be('<h1>a</h1>');
     });
 
-    it('w:{{=w}}, h:{{=h}}', function(){
-        var tpl = ec('w:{{=w}}, h:{{=h}}');
-        var ret = tpl({
-            w:10,
-            h:20
-        });
-        // console.log(tpl.source);
-        expect(ret).to.be('w:10, h:20');
-    });
+});
 
-    it('iterate an array', function(){
-        var tpl = ec('{{^list item key}}'+
-              '<i>{{=&item}}</i>'+
+describe('array', function () {
+
+    xit('normal', function(){
+        var tpl = ec('{{^list}}'+
+              'D'+
             '{{/}}');
         var ret = tpl({
             list: ['a', 'b', 'c']
         });
-        expect(ret).to.be('<i>a</i><i>b</i><i>c</i>');
+        console.log('___',tpl.source);
+        expect(ret).to.be('a0b1c2');
     });
 
-    it('iterate an array, key with "-"', function(){
+    it('defining your own "item" and "key" for array iterating', function(){
+        var tpl = ec('{{^list item key}}'+
+              '{{=&item}}{{=&key}}'+
+            '{{/}}');
+        var ret = tpl({
+            list: ['a', 'b', 'c']
+        });
+        console.log(tpl.source);
+        expect(ret).to.be('a0b1c2');
+    });
+
+    it('key with "-"', function(){
         var tpl = ec('{{^["list-foo"] item key}}'+
-              '<i>{{=&item}}</i>'+
+              '{{=&item}}{{=&key}}'+
             '{{/}}');
         var ret = tpl({
             'list-foo': ['a', 'b', 'c']
         });
-        expect(ret).to.be('<i>a</i><i>b</i><i>c</i>');
+        expect(ret).to.be('a0b1c2');
     });
 
-    it('output variable in iteration', function(){
+    it('outer variable within an iteration', function(){
         var tpl = ec('{{^list item key}}'+
               '<i>{{=foo}} {{=&item}}</i>'+
             '{{/}}');
@@ -142,30 +200,131 @@ describe('usage test', function () {
             foo: 'foo',
             list: ['a', 'b', 'c']
         });
-        expect(ret).to.be('<i>foo a</i><i>foo b</i><i>foo c</i>');
+        expect(ret).to.be(
+            '<i>foo a</i>'+
+            '<i>foo b</i>'+
+            '<i>foo c</i>'
+        );
     });
 
-    it('iterate an object', function(){
-        var tpl = ec('<ul>'+
-            '{{#devDependencies version moudle}}'+
-              '<li>{{=&moudle}}:{{=&version}}</li>'+
+    it('nested array', function(){
+        var tpl = ec('{{^sections section}}'+
+            '<li class="key">{{=&section.key}}</li>'+
+            '{{^&section.citys city}}'+
+                '<li class="city">{{=&city}}</li>'+
             '{{/}}'+
-        '</ul>');
+        '{{/}}');
+        var ret = tpl({
+            sections: [
+                {
+                    key: 'A',
+                    citys: [
+                        '鞍山',
+                        '安庆'
+                    ]
+                },
+                {
+                    key: 'B',
+                    citys: [
+                        '北京',
+                        '保定'
+                    ]
+                }
+            ]
+        });
+        // console.log(tpl.source);
+        expect(ret).to.be(
+            '<li class="key">A</li>'+
+            '<li class="city">鞍山</li>'+
+            '<li class="city">安庆</li>'+
+            '<li class="key">B</li>'+
+            '<li class="city">北京</li>'+
+            '<li class="city">保定</li>'
+        );
+    });
+
+    // TODO: filter: isArray
+    xit('items with different type', function(){
+        var tpl = ec('{{^list item}}'+
+            '{{?&item|isArray}}'+
+                '<li class="city">{{=&item[0]}}</li>'+
+            '{{:}}'+
+                '<li class="key">{{=&item}}</li>'+
+            '{{/}}'+
+        '{{/}}');
+        var ret = tpl({
+            list: [
+                'A',
+                ['鞍山'],
+                ['安庆'],
+                'B',
+                ['北京'],
+                ['保定']
+            ]
+        });
+        console.log(tpl.source);
+        expect(ret).to.be(
+            '<li class="key">A</li>'+
+            '<li class="city">鞍山</li>'+
+            '<li class="city">安庆</li>'+
+            '<li class="key">B</li>'+
+            '<li class="city">北京</li>'+
+            '<li class="city">保定</li>'
+        );
+    });
+
+    it('global array', function () {
+        window.list = ['a', 'b', 'c'];
+        var tpl = ec('{{^&list item key}}{{=&item}}{{=&key}}{{/}}');
+        console.log(tpl.source);
+        var ret = tpl({});
+        expect(ret).to.be('a0b1c2');
+    });
+
+});
+
+describe('object', function () {
+
+    it('normal', function(){
+        var tpl = ec('{{#a item key}}'+
+              '<li>{{=&key}}:{{=&item}}</li>'+
+            '{{/}}');
 
         var ret = tpl({
-            "devDependencies": {
-              "grunt-contrib-uglify": "latest",
-              "grunt-contrib-watch": "latest"
+            a: {
+              x: 'X',
+              y: 'Y'
             }
         });
 
-        var result = '<ul>'+
-            '<li>grunt-contrib-uglify:latest</li>'+
-            '<li>grunt-contrib-watch:latest</li>'+
-        '</ul>';
-        expect(ret).to.be(result);
+        expect(ret).to.be(
+            '<li>x:X</li>'+
+            '<li>y:Y</li>'
+        );
     });
 
+    xit('<%this.name%>', function(){
+        eoraptor.setDelimiter('<%', '%>');
+        var tpl = ec('<%this.name%>');
+        // console.log(tpl.source);
+        expect(tpl.render({name:'eoraptor.js'})).to.be('eoraptor.js');
+        eoraptor.setDelimiter();
+    });
+
+    xit('{{{', function(){
+        // 连续出现了多次'{', 应该正确的识别出靠内的表达式{{code}}
+        var tpl = ec('function(){'+
+            '{{=this.code}}'+
+        '}');
+        // console.log(tpl.source.replace(/[\r\t\n]/g, ''));
+        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[], e__=eoraptor.escape;r__.push("function(){");r__.push(e__(t__.code));r__.push("}");return r__.join("");}');
+    });
+
+
+});
+
+
+describe('if elseif else', function () {
     it('if like true', function(){
         var tpl = ec('{{?foo}}foo{{/}}');
         var ret = tpl({
@@ -181,141 +340,9 @@ describe('usage test', function () {
         });
         expect(ret).to.be('foo');
     });
+});
 
-
-    // it('if "foo"==true', function(){
-    //     var data = {
-    //         foo: 'foo'
-    //     };
-    //     var tpl = '{{?foo}}foo{{/}}';
-    //     var result = 'foo';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if ""==true', function(){
-    //     var data = {
-    //         foo: ''
-    //     };
-    //     var tpl = '{{?this.foo}}foo{{/}}';
-    //     var result = '';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if null==true', function(){
-    //     var data = {
-    //         foo: null
-    //     };
-    //     var tpl = '{{?this.foo}}foo{{/}}';
-    //     var result = '';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if undefined==true', function(){
-    //     var data = {
-    //         foo: undefined
-    //     };
-    //     var tpl = '{{?this.foo}}foo{{/}}';
-    //     var result = '';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if undefined==true', function(){
-    //     var data = {};
-    //     var tpl = '{{?this.foo}}foo{{/}}';
-    //     var result = '';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if false', function(){
-    //     var data = {
-    //         foo: false
-    //     };
-    //     var tpl = '{{?this.foo}}foo{{/}}';
-    //     var result = '';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if ===value', function(){
-    //     var data = {
-    //         foo: 'show'
-    //     };
-    //     var tpl = '{{?this.foo === "show"}}foo{{/}}';
-    //     var result = 'foo';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if !==value', function(){
-    //     var data = {
-    //         foo: 'show'
-    //     };
-    //     var tpl = '{{?this.foo !== "show"}}{{/}}';
-    //     var result = '';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    // it('if else', function(){
-    //     var data = {
-    //         foo: false
-    //     };
-    //     var tpl = '{{?this.foo}}'+
-    //         'foo'+
-    //     '{{:}}'+
-    //         'boo'+
-    //     '{{/}}';
-    //     var result = 'boo';
-    //     // console.log(ec(tpl).source);
-    //     expect(ec(tpl).render(data)).to.be(result);
-    // });
-
-    xit('{{?this.number === 1}}', function(){
-        var tpl = "the number is {{?this.number === 1}}"+
-            "one"+
-        "{{:}}"+
-            "unknown"+
-        "{{/}}";
-        // console.log(ec(tpl).source);
-        expect(ec(tpl).render({})).to.be('the number is unknown');
-    });
-
-    xit('{{?this.foo === "x"}}', function(){
-        var data = {
-            foo: 'foo'
-        };
-        var tpl = '{{?this.foo === "x"}}'+
-            'x'+
-        '{{:this.foo === "foo"}}'+
-            'foo'+
-        '{{:}}'+
-            'y'+
-        '{{/}}';
-        var result = 'foo';
-        // console.log(ec(tpl).source);
-        expect(ec(tpl).render(data)).to.be(result);
-    });
-
-    xit('comments', function(){
-        var data = {
-            foo: 'foo'
-        };
-        var tpl = '{{=this.foo}}{{!ignore}}';
-        var result = 'foo';
-        // console.log(ec(tpl).source);
-        expect(ec(tpl).render(data)).to.be(result);
-    });
-
-    xit('none tag flag', function(){
-        var tpl = '{{@this.foo}}';
-        expect(ec(tpl).render()).to.be(tpl);
-    });
-
+describe('partial', function () {
     xit('partial', function(){
         // data for navi partial template
         // {
@@ -386,29 +413,14 @@ describe('usage test', function () {
         expect(tpl.render(data)).to.be('<p>navi:</p><ul><li>foo</li><li>boo</li></ul><p>slider:</p><ul><li>1.jpg</li><li>2.jpg</li></ul>');
 
     });
+});
 
-    xit('<%this.name%>', function(){
-        eoraptor.setDelimiter('<%', '%>');
-        var tpl = ec('<%this.name%>');
-        // console.log(tpl.source);
-        expect(tpl.render({name:'eoraptor.js'})).to.be('eoraptor.js');
-        eoraptor.setDelimiter();
-    });
-
-    xit('{{{', function(){
-        // 连续出现了多次'{', 应该正确的识别出靠内的表达式{{code}}
-        var tpl = ec('function(){'+
-            '{{=this.code}}'+
-        '}');
-        // console.log(tpl.source.replace(/[\r\t\n]/g, ''));
-        expect(tpl.source.replace(/[\r\t\n]/g, '')).to.be('function (data) {var t__=data, r__=[], e__=eoraptor.escape;r__.push("function(){");r__.push(e__(t__.code));r__.push("}");return r__.join("");}');
-    });
-
-    xit('extract from script', function(){
+describe('extract', function () {
+    it('extract from script', function(){
         eoraptor.extract();
         expect(typeof eoraptor.t1).to.be('function');
         expect(typeof eoraptor.t2).to.be('function');
-    });
+    });    
 });
 
 xdescribe('inner-system test', function () {
