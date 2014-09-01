@@ -1,75 +1,23 @@
+## TODO
+
 * customizable output filter plugin
 * performance testing and comparision
 
 * official site
 
 
-#### 定义模板
-
-method 1: compile('xxx')
-
-```js
-eoraptor.compile('name', '{{=this.name}}');
-```
-
-method 2: compile()
-
-```html
-<script id="name" type="text/x-eoraptor">
-{{=this.name}}
-</script>
-<script>
-eoraptor.compile();
-</script>
-```
-
-
-#### 变量
-
-```html
-{{=name}} escaped
-{{=name|uppercase}}
-{{=[first-name]}}
-{{=[first-name]|uppercase}}
-{{=~item.name}}
-```
-
-#### if - else if - else
-
-```html
-{{?this.status === 1}}
-
-{{?this.status === this.foo}}
-{{?status === foo}} v vs v
-
-{{?status === "foo"}} v vs str
-
-{{?status === @true|@false|@null|@undefined|@123}} v vs 
-
-{{?status === true}} if (this.status === true)
-{{?status === true}} if (this.status === this["true"])
-{{?status === "true"}} if (this.status === "true")
-{{?status === 1}} if (this.status === 1)
-{{?status === "1"}} if (this.status === "1")
-{{?status === ?}} if (this.status === this["1"])
-
-
-{{?this.status === 1}}
-
-{{:this.status === 2}}
-
-{{:}}
-
-{{/}}
-
-
-
+## variables
 
 ```
+{{name}}       escaped
+{{name|raw}}   unescaped
+{{first-name}} special-normal character
+{{N\\.A\\.}}   dot character in the key
+```
 
-模板只应该关心变量是什么，而不应该关心变量是怎么来的。
+## if/elseif/else
 
-```js
+```
 {{?typeIs3}}
 33
 {{:typeIs4}}
@@ -77,71 +25,53 @@ eoraptor.compile();
 {{:}}
 55
 {{/}}
-
-// render
-if (t__.typeIs3()) {
-	r__.push("33");
-} else if (t__.typeIs4()) {
-	r__.push("44");
-} else {
-	r__.push("55");
-}
 ```
 
-```js
-{
-   type: 3,
-   typeIs3: function (ctx) {
-       return ctx.type === 3;
-   },
-   typeIs4: function (ctx) {
-	   return ctx.type ===4;
-   }
-}
+## `Array > A > ^`
+
 ```
-
-#### 遍历数组 `Array > A > ^`
-
-```js
 var data = {
-	list : [
-    	{
-        	title: xxx,
-            keywords: [xxx, xxx, ...]
-        },
-        ...
+    list: [
+        {
+            title: 'alinw',
+            list: [
+                {
+                    title: 'search'
+                },
+                {
+                    title: 'dialog'
+                }
+            ]
+        }
     ]
-}
+};
 
-<ul>
-{{^list item key}}
-	<li {{?@item.first}}class="first"{{/}}>
-		<h2>{{=item.title}}</h2>
-        {{^item.keywords word}}
-        	{{=word}}
-            {{!@word.last}},{{/}}
+{{^list|xxx group}}
+	<li>
+		<h2>{{title}}</h2>
+        {{^list ui}}
+        	输出上一层的标题：{{&group.title}}
+        	如果当前item意外纯在'&group.title'链，那么使用&ui强调当前item
+        	如：{{&ui.&group.title}}
+        	当前item的父作用域可以省略$ui，只在有冲突时或多层嵌套时才使用。
+        	{{title}} === {{&ui.title}}
+        	
+        	当前item的内置属性包括，不要担心性能问题，所有属性在内部都是get方法
+        	{{&ui.&index}} 从0开始的索引
+        	{{&ui.&count}} 从1开始的索引
+        	{{&ui.&first}} 是否是第1个item
+        	{{&ui.&last}}  是否是最后1个item
         {{/}}
     </li>
 {{/}}
 </ul>
 ```
 
-```html
-{{^list item key}}
-    {{=item.name}}:{{=item.age}}
-    {{?&item.isFirst}}
-    	first
-    {{/}}
-    {{}}
-    {{=list.length}}
-{{/}}
-```
-
-#### 遍历对象  `Hash > H > #`
+##  `Hash > H > #`
 
 ```html
 {{#book item key}}
-    {{=key}}:{{=item}}
+    {{&key}}:{{&item}}
 {{/}}
 ```
 
@@ -248,26 +178,10 @@ var data = {
 这个时候在定义模板时，应该注意转义的写法
 
 ```html
-{{=this["a'b"]}} ok
 {{=this['a\\\'b']}} ok
-{{=this['a\'b']}} bad
 ```
 
 
-```html
-{{^this.list item key}}
-	{{?item.img}}
-    	{{?item.state==1}}
-        	img and state 1
-        {{/}}
-        {{?item.state==2}}
-        	img and state 2
-        {{/}}
-    {{:}}
-    	{{>textItem}}
-    {{/}}
-{{/}}
-```
 
 
 
