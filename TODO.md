@@ -2,8 +2,57 @@
 
 * customizable output filter plugin
 * performance testing and comparision
-
 * official site
+
+## 前导符号含义说明
+
+|符号|含义|示例|
+|-|-|-|
+|无符号|当前作用域下的键值|{{xxx}}|
+|?|相当于 if (xxx like true) 语句|{{?xxx}}|
+|:|相当于 else 语句|{{:}}|
+|:xxx|相当于 else if(xxx like true) 语句|{{:xxx}}|
+|/|相当于任意JS代码块的结束符|{{/}}|
+|/xxx|同上，含义完全一样|{{/if}}|
+|^|遍历数组|{{^list}}{{xxx}}{{/}}|
+|#|遍历Hash对象|{{#book}}|
+|&|对遍历过程中当前item的引用 + 当前item的内置属性的引用|{{&item.name}}|
+|~|多语言|{{~yes}}|
+|>|子模板|{{>item}}|
+|!|注释内容|{{!xxx}}|
+
+## 还没有使用的前导符号
+
+|符号|含义|示例|
+|-|-|-|
+|@|未使用|未使用|
+|%|未使用|未使用|
+|*|未使用|未使用|
+|-|未使用|未使用|
+|<|未使用|未使用|
+|"|未使用|未使用|
+|'|未使用|未使用|
+|;|未使用|未使用|
+
+## 禁止使用的前导符号
+
+|符号|含义|示例|
+|-|-|-|
+|$|未使用|未使用|
+|_|未使用|未使用|
+
+
+## 非前导符号含义说明
+
+|符号|含义|示例|
+|-|-|-|
+|一个竖线|管道符号|{{xxx一个竖线nl2br}}|
+|\\|转义下一个字符|{{a\\\'b}}|
+|＝|赋值|{{>slide list=slideList}}|
+|.|作用域的下一层|{{book.price}}|
+
+
+
 
 
 ## variables
@@ -19,12 +68,35 @@
 
 ```
 {{?typeIs3}}
-33
+3
 {{:typeIs4}}
-44
+4
 {{:}}
-55
+5
 {{/}}
+
+if (a===true)
+{{? a|is}}
+
+if (a==true)
+{{? a|like}}
+
+
+if (a===1 || a===2)
+{{? a|is 1 2}}
+
+if (a==1 || a==2)
+{{? a|like 1 2}}
+
+
+if (a===1 && b===2)
+{{? a|showButton 1 b 2}}
+E.filter('showButton', function (a, v1, b, v2) {
+    return a===v1 && b===v2;
+})
+
+
+
 ```
 
 ## `Array > A > ^`
@@ -46,21 +118,21 @@ var data = {
     ]
 };
 
-{{^list|xxx group}}
+{{^list parent}}
 	<li>
 		<h2>{{title}}</h2>
-        {{^list ui}}
-        	输出上一层的标题：{{&group.title}}
-        	如果当前item意外纯在'&group.title'链，那么使用&ui强调当前item
-        	如：{{&ui.&group.title}}
-        	当前item的父作用域可以省略$ui，只在有冲突时或多层嵌套时才使用。
-        	{{title}} === {{&ui.title}}
+        {{^list child}}
+        	输出上一层的标题：{{&parent.title}} 相当于 {{../title}}
+        	如果当前item意外纯在'&group.title'链，那么使用&child强调当前item
+        	如：{{&child.&group.title}}
+        	当前item的父作用域可以省略&child，只在有冲突时或多层嵌套时才使用。
+        	{{title}} === {{&child.title}}
         	
         	当前item的内置属性包括，不要担心性能问题，所有属性在内部都是get方法
-        	{{&ui.&index}} 从0开始的索引
-        	{{&ui.&count}} 从1开始的索引
-        	{{&ui.&first}} 是否是第1个item
-        	{{&ui.&last}}  是否是最后1个item
+        	{{&child.&index}} 从0开始的索引
+        	{{&child.&count}} 从1开始的索引
+        	{{?&child.&first}} 是否是第1个item
+        	{{?&child.&last}}  是否是最后1个item
         {{/}}
     </li>
 {{/}}
@@ -74,6 +146,13 @@ var data = {
     {{&key}}:{{&item}}
 {{/}}
 ```
+
+
+
+
+
+
+
 
 #### 注释
 
@@ -158,11 +237,18 @@ var p1_2 = {
 {{>p1 p2 setting=setting}}
 ```
 
+#### 多语言
+
+```html
+{{$yes}} 相当于handlebars的 {{i18n 'yes'}}
+{{$yes}}
+```
+
 #### 管道
 
 ```html
-{{=this.xxx|nl2br}} \n转换成<br/>
-{{=this.xxx|fn}} 取this.xxx()的返回值
+{{xxx|nl2br}} \n转换成<br/>
+{{xxx|fn}} 取this.xxx()的返回值
 ```
 
 #### 特殊情况处理
@@ -181,8 +267,6 @@ var data = {
 {{=this['a\\\'b']}} ok
 ```
 
+## 参考
 
-
-
-
-
+* http://mozilla.github.io/nunjucks/
