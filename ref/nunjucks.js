@@ -1,6 +1,8 @@
 // Browser bundle of nunjucks 1.1.0 
 
 (function() {
+
+    var logStyle = 'background-color:orange; color: #fff;'
     var modules = {};
     // file: object.js
     (function() {
@@ -22,9 +24,11 @@
                 var src = props[k];
                 var parent = prototype[k];
 
+                // ... 用fnTest.test(src)方法在测试src回调中是否有parent关键字！不严谨呀！
                 if (typeof parent == "function" &&
                     typeof src == "function" &&
                     fnTest.test(src)) {
+                    // ... 写得晦涩难懂
                     prototype[k] = (function(src, parent) {
                         return function() {
                             // Save the current parent method
@@ -64,7 +68,8 @@
 
             return new_cls;
         }
-
+        console.log('object.js');
+        console.dir(extend(Object, "Object", {}));
         modules['object'] = extend(Object, "Object", {});
     })();
     // file: lib.js
@@ -350,6 +355,7 @@
     })();
     // file: nodes.js
     (function() {
+        // ... 这个util是undefined!!??
         var util = modules["util"];
         var lib = modules["lib"];
         var Object = modules["object"];
@@ -364,11 +370,13 @@
             }
         }
 
+        // ... 创建Node类
         var Node = Object.extend("Node", {
             init: function(lineno, colno) {
                 this.lineno = lineno;
                 this.colno = colno;
 
+                // ... 这个地方在做什么
                 var fields = this.fields;
                 for (var i = 0, l = fields.length; i < l; i++) {
                     var field = fields[i];
@@ -412,6 +420,9 @@
                 }, this);
             }
         });
+
+        console.log('___Node Class___');
+        console.dir(Node);
 
         // Abstract nodes
         var Value = Node.extend("Value", {
@@ -906,10 +917,12 @@
             return obj.apply(this, args);
         }
 
+        // ... 运行时查找name
         function contextOrFrameLookup(context, frame, name) {
             var val = frame.lookup(name);
             return (val !== undefined && val !== null) ?
                 val :
+                // 从当前的作用域查找
                 context.lookup(name);
         }
 
@@ -2594,7 +2607,6 @@
                         }
 
                         // Same for the succeding block start token
-                        // ... from here
                         if (nextToken &&
                             nextToken.type == lexer.TOKEN_BLOCK_START &&
                             nextVal.charAt(nextVal.length - 1) == '-') {
@@ -2669,6 +2681,7 @@
             return 'hole_' + sym++;
         }
 
+        // ...? 写入时复制
         // copy-on-write version of map
         function mapCOW(arr, func) {
             var res = null;
@@ -2883,6 +2896,7 @@
         // var ast = transform(parser.parse(src, [new FooExtension()]), ['bar']);
         // nodes.printNodes(ast);
 
+
         modules['transformer'] = {
             transform: transform
         };
@@ -2932,6 +2946,7 @@
                 this.buffer = null;
                 this.bufferStack = [];
                 this.isChild = false;
+                // ...todo 看看都有什么情况
                 this.scopeClosers = '';
             },
 
@@ -2967,12 +2982,14 @@
             },
 
             emitFuncBegin: function(name) {
+                // ... 注意buffer
                 this.buffer = 'output';
                 this.scopeClosers = '';
                 this.emitLine('function ' + name + '(env, context, frame, runtime, cb) {');
                 this.emitLine('var lineno = null;');
                 this.emitLine('var colno = null;');
-                this.emitLine('var ' + this.buffer + ' = "";');
+                // ... 使用buffer
+                this.emitLine('var ' + this.buffer + ' = "";'); 
                 this.emitLine('try {');
             },
 
@@ -3904,18 +3921,23 @@
                 this.compileLiteral(node, frame);
             },
 
+            // ... 编译字符串的值 和 变量的值
             compileOutput: function(node, frame) {
                 var children = node.children;
                 for (var i = 0, l = children.length; i < l; i++) {
                     // TemplateData is a special case because it is never
                     // autoescaped, so simply output it for optimization
+                    // ... 原字符串部分
                     if (children[i] instanceof nodes.TemplateData) {
                         if (children[i].value) {
                             this.emit(this.buffer + ' += ');
                             this.compileLiteral(children[i], frame);
                             this.emitLine(';');
                         }
-                    } else {
+                    } 
+                    // ... 变量值
+                    else {
+                        // ...? 这是取变量的方法吗
                         this.emit(this.buffer + ' += runtime.suppressValue(');
                         this.compile(children[i], frame);
                         this.emit(', env.autoesc);\n');
@@ -3923,13 +3945,21 @@
                 }
             },
 
+            // ... 编译根节点
             compileRoot: function(node, frame) {
+                // ...? 目的是
                 if (frame) {
                     this.fail("compileRoot: root node can't have frame");
                 }
 
                 frame = new Frame();
-
+                // ... 生成函数的开始部分代码
+                // 
+                // function root(env, context, frame, runtime, cb) {
+                //     var lineno = null;
+                //     var colno = null;
+                //     var output = "";
+                //     try {
                 this.emitFuncBegin('root');
                 this._compileChildren(node, frame);
                 if (this.isChild) {
@@ -3940,6 +3970,7 @@
                 // When compiling the blocks, they should all act as top-level code
                 this.isChild = false;
 
+                // ...? 查找当前的节点中的Block节点 待分析
                 var blocks = node.findAll(nodes.Block);
                 for (var i = 0; i < blocks.length; i++) {
                     var block = blocks[i];
@@ -3964,6 +3995,7 @@
             compile: function(node, frame) {
                 var _compile = this["compile" + node.typename];
                 if (_compile) {
+                    debugger;
                     _compile.call(this, node, frame);
                 } else {
                     this.fail("compile: Cannot compile node: " + node.typename,
@@ -3999,9 +4031,26 @@
                     }
                 }
 
-                c.compile(transformer.transform(parser.parse(src, extensions, lexerTags),
-                    asyncFilters,
-                    name));
+                // ... 此处将源代码分解为三部来写 方便分析
+                // ... step1: parser.parse
+                var __1 = parser.parse(src, extensions, lexerTags);
+                console.log('%c parser.parse ', logStyle);
+                console.log(__1);
+
+                // ... step2: transformer.transform
+                var __2 = transformer.transform(__1, asyncFilters, name);
+                console.log('%c transformer.transform ', logStyle);
+                console.log(__2);
+
+                // ... step3: compiler.compile
+                c.compile(__2);
+
+                // ... 源代码开始
+                // c.compile(transformer.transform(parser.parse(src, extensions, lexerTags),
+                //     asyncFilters,
+                //     name));
+                // ... 源代码结束
+
                 return c.getCode();
             },
 
@@ -4446,6 +4495,7 @@
         modules['filters'] = filters;
     })();
     // file: globals.js
+    // ... 内置的全局函数
     (function() {
 
         function cycler(items) {
@@ -4850,8 +4900,11 @@
         });
 
         var Context = Obj.extend({
+            // ... ctx是运行时render方法透传的模板数据
+            // ...todo blocks是编译时分析出来的xxx
             init: function(ctx, blocks) {
                 this.ctx = ctx;
+                // ... this.blocks = {xxx: []}
                 this.blocks = {};
                 this.exported = [];
 
@@ -4860,6 +4913,8 @@
                 }
             },
 
+            // ... 查找指定key的值
+            // ... 如果指定的key没有找到，但指定的key是globals的功能 返回对应的功能
             lookup: function(name) {
                 // This is one of the most called functions, so optimize for
                 // the typical case where the name isn't in the globals
@@ -4947,14 +5002,15 @@
                     this.compiled = false;
                 }
             },
-
+            // var t = nunjucks.compile('Hi {{tpl}}!');
+            // t.render({ tpl: "James" });  ctx 是 { tpl: "James" }
             render: function(ctx, frame, cb) {
-                // ...? 这是什么使用场景
+                // ... 如果是 .render(function () {})
                 if (typeof ctx === 'function') {
                     cb = ctx;
                     ctx = {};
                 } 
-                // ...? 这是什么使用场景
+                // ...? 什么场景使用了frame
                 else if (typeof frame === 'function') {
                     cb = frame;
                     frame = null;
@@ -4963,6 +5019,8 @@
                 return lib.withPrettyErrors(this.path, this.env.dev, function() {
                     this.compile();
 
+                    // ... 当前作用域不是简单的Object对象，是Context类的实例，并且整合了blocks对象
+                    // ...todo 整合了blocks对象的情景分析
                     var context = new Context(ctx || {}, this.blocks);
                     var syncResult = null;
 
@@ -5017,6 +5075,7 @@
                 if (this.tmplProps) {
                     props = this.tmplProps;
                 } else {
+                    // ... 正式编译入口
                     var source = compiler.compile(this.tmplStr,
                         this.env.asyncFilters,
                         this.env.extensionsList,
@@ -5036,6 +5095,7 @@
                 var blocks = {};
 
                 for (var k in props) {
+                    // ... 这是在寻找什么情况
                     if (k.slice(0, 2) == 'b_') {
                         blocks[k.slice(2)] = props[k];
                     }
