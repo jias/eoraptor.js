@@ -1085,6 +1085,8 @@
             };
         }
 
+        // ... 标记生成器
+        // ...todo 分析过程
         function Tokenizer(str, tags) {
             this.str = str;
             this.index = 0;
@@ -1249,7 +1251,9 @@
 
                 if (this.is_finished()) {
                     return null;
-                } else if ((tok = this._extractString(this.tags.BLOCK_START + '-')) ||
+                } 
+                // 
+                else if ((tok = this._extractString(this.tags.BLOCK_START + '-')) ||
                     (tok = this._extractString(this.tags.BLOCK_START))) {
                     this.in_code = true;
                     return token(TOKEN_BLOCK_START, tok, lineno, colno);
@@ -1261,8 +1265,10 @@
                     var data;
                     var in_comment = false;
 
+
                     if (this._matches(this.tags.COMMENT_START)) {
                         in_comment = true;
+                        // ...? 待分析如何处理注释
                         tok = this._extractString(this.tags.COMMENT_START);
                     }
 
@@ -1345,7 +1351,10 @@
             return str;
         };
 
+        // ... 验证从当前index开始的若干个字符是否匹配指定的str，返回布尔值
+        // ... 核心方法.slice
         Tokenizer.prototype._matches = function(str) {
+            // ... 如果剩余的字符长度已经小于str的长度，就不用在匹配了
             if (this.index + str.length > this.len) {
                 return null;
             }
@@ -1354,6 +1363,7 @@
             return m == str;
         };
 
+        // ... 从当前index开始的字符开始查找，如果匹配了指定的str，则返回str，并更新index
         Tokenizer.prototype._extractString = function(str) {
             if (this._matches(str)) {
                 this.index += str.length;
@@ -1374,6 +1384,11 @@
             return this._extractMatching(false, charString);
         };
 
+        // ... 当breakOnMatch为true时，从当前index开始一直向前查找，
+        //     直到遇到charString中的一个字符停止，
+        //     返回从起始index到停止时刻index之间的所有字符
+        //     
+        // ... 这个方法名命名的有待改进
         Tokenizer.prototype._extractMatching = function(breakOnMatch, charString) {
             // Pull out characters until a breaking char is hit.
             // If breakOnMatch is false, a non-matching char stops it.
@@ -1419,9 +1434,10 @@
             }
         };
 
+        // ... 将指针移到下一个位置 注意同时更新lineno和colno
         Tokenizer.prototype.forward = function() {
             this.index++;
-
+            // ... 换行情况
             if (this.previous() == "\n") {
                 this.lineno++;
                 this.colno = 0;
@@ -1447,6 +1463,7 @@
             }
         };
 
+        // ... 返回index位置的那个字符
         Tokenizer.prototype.current = function() {
             if (!this.is_finished()) {
                 return this.str.charAt(this.index);
@@ -1454,6 +1471,7 @@
             return "";
         };
 
+        // ... 返回index前一个位置的那个字符
         Tokenizer.prototype.previous = function() {
             return this.str.charAt(this.index - 1);
         };
@@ -1499,6 +1517,7 @@
         var Parser = Object.extend({
             init: function(tokens) {
                 // ...? tokens是Tokenizer的示例 不知道这里为什么用复数命名该属性
+                // ...todo 这个地方的变量实际上是tokenizer的含义，使用tokens的命名是为什么
                 this.tokens = tokens;
                 this.peeked = null;
                 this.breakOnBlocks = null;
@@ -1507,6 +1526,7 @@
                 this.extensions = [];
             },
 
+            // ...note 这里的Parser的nextToken方法 内部调用了tokenizer的nextToken方法
             nextToken: function(withWhitespace) {
                 var tok;
 
@@ -1520,6 +1540,7 @@
                     }
                 }
                 // ... todo 跟进此处的nextToken重要方法 
+                debugger;
                 tok = this.tokens.nextToken();
 
                 if (!withWhitespace) {
@@ -2613,7 +2634,9 @@
                             // TODO: this could be optimized (don't use regex)
                             data = data.replace(/\s*$/, '');
                         }
-
+                        // ... here
+                        // ... 对模板中原始字符串的处理
+                        // ... 原始字符串对应的token是 nodes.Output + nodes.TemplateData
                         buf.push(new nodes.Output(tok.lineno,
                             tok.colno, [new nodes.TemplateData(tok.lineno,
                                 tok.colno,
@@ -2642,8 +2665,16 @@
                 return new nodes.NodeList(0, 0, this.parseNodes());
             },
 
+            // ... 创建语法树
             parseAsRoot: function() {
-                return new nodes.Root(0, 0, this.parseNodes());
+                // ... 将原代码拆分
+                // ... 词法解析的正式开始
+                // ... 返回tokens数组 形式为 [token1, token2] 其中每个token都是词语上对应的JS类的一个实例
+                var r = this.parseNodes(); // 拆分的代码
+                // ... 创建语法树永远的根节点
+                var r2 = new nodes.Root(0, 0, r); // 拆分的代码
+                return r2; // 拆分的代码
+                // return new nodes.Root(0, 0, this.parseNodes()); // 原代码
             }
         });
 
@@ -2661,8 +2692,15 @@
 
         modules['parser'] = {
             parse: function(src, extensions, lexerTags) {
-                // ... lexer.lex() 返回的是一个Tokenizer类的示例
-                var p = new Parser(lexer.lex(src, lexerTags));
+                // var p = new Parser(lexer.lex(src, lexerTags)); // 原代码
+
+                // ...step1 lexer.lex() 返回的是一个Tokenizer类的示例
+                // ...note 在创建Tokenizer类的实例时，并没有对字符流进行分析
+                var tokenizer = lexer.lex(src, lexerTags); // 分解的代码
+                // ...step2 创建词法解析器的实例
+                // ...note 在实例化词法解析器时，并没有执行具体的解析行为
+                var p = new Parser(tokenizer); // 分解的代码
+
                 if (extensions !== undefined) {
                     p.extensions = extensions;
                 }
@@ -3995,7 +4033,6 @@
             compile: function(node, frame) {
                 var _compile = this["compile" + node.typename];
                 if (_compile) {
-                    debugger;
                     _compile.call(this, node, frame);
                 } else {
                     this.fail("compile: Cannot compile node: " + node.typename,
@@ -4018,6 +4055,7 @@
         // console.log(tmpl);
 
         modules['compiler'] = {
+            // ... 编译流程入口
             compile: function(src, asyncFilters, extensions, name, lexerTags) {
                 // ...todo step in new Compiler()
                 var c = new Compiler();
@@ -5075,7 +5113,7 @@
                 if (this.tmplProps) {
                     props = this.tmplProps;
                 } else {
-                    // ... 正式编译入口
+                    // ... 进入编译流程
                     var source = compiler.compile(this.tmplStr,
                         this.env.asyncFilters,
                         this.env.extensionsList,
