@@ -370,13 +370,16 @@
             }
         }
 
-        // ... 创建Node类
+        // ... 创建所有节点的超类
         var Node = Object.extend("Node", {
+            // ... init方法有第三个参数 是一个数组 
             init: function(lineno, colno) {
                 this.lineno = lineno;
                 this.colno = colno;
 
-                // ... 这个地方在做什么
+                // ... 初始化时会将节点的fields中指定的键的值设置为该数组
+                // ... var p = new Pair(lineno, colno, [child1, child2])
+                // ... p.key = p.value = [child1, child2] // 因为 p.fields = ['key', 'value']
                 var fields = this.fields;
                 for (var i = 0, l = fields.length; i < l; i++) {
                     var field = fields[i];
@@ -446,6 +449,8 @@
         var Literal = Value.extend("Literal");
         var Symbol = Value.extend("Symbol");
         var Group = NodeList.extend("Group");
+
+        // ... 大跌眼镜啊
         var Array = NodeList.extend("Array");
         var Pair = Node.extend("Pair", {
             fields: ['key', 'value']
@@ -918,6 +923,7 @@
         }
 
         // ... 运行时查找name
+        // ... todo frame参数是干什么的
         function contextOrFrameLookup(context, frame, name) {
             var val = frame.lookup(name);
             return (val !== undefined && val !== null) ?
@@ -1110,7 +1116,6 @@
         Tokenizer.prototype.nextToken = function() {
             var lineno = this.lineno;
             var colno = this.colno;
-
             if (this.in_code) {
                 // Otherwise, if we are in a block parse it as code
                 var cur = this.current();
@@ -1305,10 +1310,16 @@
                         throw new Error("expected end of comment, got end of file");
                     }
 
-                    return token(in_comment ? TOKEN_COMMENT : TOKEN_DATA,
-                        tok,
-                        lineno,
-                        colno);
+                    // ... token方法只做了简单包装
+                    // ...     function token(type, value, lineno, colno) {
+                    // ...         return {
+                    // ...             type: type,
+                    // ...             value: value,
+                    // ...             lineno: lineno,
+                    // ...             colno: colno
+                    // ...         };
+                    // ...     }
+                    return token(in_comment ? TOKEN_COMMENT : TOKEN_DATA, tok, lineno, colno);
                 }
             }
 
@@ -1514,11 +1525,13 @@
         var Object = modules["object"];
         var lib = modules["lib"];
 
+        // ... 词法分析工具
+        // ... 词法分析工具的分析过程依赖了词法提取工具(Tokenizer)
         var Parser = Object.extend({
             init: function(tokens) {
-                // ...? tokens是Tokenizer的示例 不知道这里为什么用复数命名该属性
-                // ...todo 这个地方的变量实际上是tokenizer的含义，使用tokens的命名是为什么
+                // ... 这个属性的命名不好，该属性指向一个Tokenizer的实例，应该命名为"tokenizer"
                 this.tokens = tokens;
+                // ... 存放预读出来的下一个token值
                 this.peeked = null;
                 this.breakOnBlocks = null;
                 this.dropLeadingWhitespace = false;
@@ -1526,10 +1539,13 @@
                 this.extensions = [];
             },
 
-            // ...note 这里的Parser的nextToken方法 内部调用了tokenizer的nextToken方法
+            // ... 预读下一个token
+            // ... note 这里是Parser的nextToken方法 内部调用了tokenizer的nextToken方法
+            // ... todo withWhitespace参数功能待分析
             nextToken: function(withWhitespace) {
                 var tok;
 
+                // 如果已经有缓存的预读
                 if (this.peeked) {
                     if (!withWhitespace && this.peeked.type == lexer.TOKEN_WHITESPACE) {
                         this.peeked = null;
@@ -1539,8 +1555,7 @@
                         return tok;
                     }
                 }
-                // ... todo 跟进此处的nextToken重要方法 
-                debugger;
+
                 tok = this.tokens.nextToken();
 
                 if (!withWhitespace) {
@@ -1552,11 +1567,13 @@
                 return tok;
             },
 
+            // ... 预读下一个token并缓存
             peekToken: function() {
                 this.peeked = this.peeked || this.nextToken();
                 return this.peeked;
             },
 
+            // ... 将指定的token存在peeked属性上
             pushToken: function(tok) {
                 if (this.peeked) {
                     throw new Error("pushToken: can only push one token on between reads");
@@ -2256,6 +2273,7 @@
                 return this.parseCompare();
             },
 
+            // ... 解析表达式
             parseCompare: function() {
                 var compareOps = ['==', '!=', '<', '>', '<=', '>='];
                 var expr = this.parseAdd();
@@ -2371,6 +2389,7 @@
                 return node;
             },
 
+            // ... 解析一元运算符 如5++
             parseUnary: function(noFilters) {
                 var tok = this.peekToken();
                 var node;
@@ -2606,13 +2625,17 @@
                 return ret;
             },
 
+            // ... 进行词法解析
             parseNodes: function() {
                 var tok;
                 var buf = [];
 
-                // ... todo 在分析当前token的同时还预读了下一个token 作用是？
-                // ... tip 预读的下一个token存在了peeked属性上
+                // ... note 在分析当前token的同时还预读了下一个token 只是为了判断"是否要删除
+                //          当前token的value的右边空白字符" 
+                // ... todo 这里的实现有待进一步优化啊!!!
+                // ... tip  预读的下一个token存在了peeked属性上
                 while ((tok = this.nextToken())) {
+                
                     if (tok.type == lexer.TOKEN_DATA) {
                         var data = tok.value;
                         var nextToken = this.peekToken();
@@ -2628,19 +2651,25 @@
                         }
 
                         // Same for the succeding block start token
+                        // ... 看下一个token是不是"{{-" 如果是 则删除当前token的value的右边空白字符
                         if (nextToken &&
                             nextToken.type == lexer.TOKEN_BLOCK_START &&
                             nextVal.charAt(nextVal.length - 1) == '-') {
                             // TODO: this could be optimized (don't use regex)
                             data = data.replace(/\s*$/, '');
                         }
-                        // ... here
+
                         // ... 对模板中原始字符串的处理
                         // ... 原始字符串对应的token是 nodes.Output + nodes.TemplateData
-                        buf.push(new nodes.Output(tok.lineno,
-                            tok.colno, [new nodes.TemplateData(tok.lineno,
-                                tok.colno,
-                                data)]));
+                        // buf.push(new nodes.Output(tok.lineno,
+                        //     tok.colno, [new nodes.TemplateData(tok.lineno,
+                        //         tok.colno,
+                        //         data)])); // 原代码
+                        
+                        // ... 分解的代码
+                        var __nTplData = new nodes.TemplateData(tok.lineno, tok.colno, data);
+                        var __nOutput = new nodes.Output(tok.lineno, tok.colno, [__nTplData]);
+                        buf.push(__nOutput);
                     } else if (tok.type == lexer.TOKEN_BLOCK_START) {
                         var n = this.parseStatement();
                         if (!n) {
@@ -2648,6 +2677,8 @@
                         }
                         buf.push(n);
                     } else if (tok.type == lexer.TOKEN_VARIABLE_START) {
+                        // ... to make sure 找出接下来的完整表达式
+                        // ... 该表达式整体作为一个token
                         var e = this.parseExpression();
                         this.advanceAfterVariableEnd();
                         buf.push(new nodes.Output(tok.lineno, tok.colno, [e]));
@@ -4071,12 +4102,12 @@
 
                 // ... 此处将源代码分解为三部来写 方便分析
                 // ... step1: parser.parse
-                var __1 = parser.parse(src, extensions, lexerTags);
+                var __ast = parser.parse(src, extensions, lexerTags);
                 console.log('%c parser.parse ', logStyle);
-                console.log(__1);
+                console.log(__ast);
 
                 // ... step2: transformer.transform
-                var __2 = transformer.transform(__1, asyncFilters, name);
+                var __2 = transformer.transform(__ast, asyncFilters, name);
                 console.log('%c transformer.transform ', logStyle);
                 console.log(__2);
 
@@ -5062,16 +5093,14 @@
                     var context = new Context(ctx || {}, this.blocks);
                     var syncResult = null;
 
-                    this.rootRenderFunc(this.env,
-                        context,
-                        frame || new Frame(),
-                        runtime,
-                        cb || function(err, res) {
-                            if (err) {
-                                throw err;
-                            }
-                            syncResult = res;
-                        });
+                    frame = frame || new Frame()
+
+                    this.rootRenderFunc(this.env, context, frame, runtime, cb || function(err, res) {
+                        if (err) {
+                            throw err;
+                        }
+                        syncResult = res;
+                    });
 
                     return syncResult;
                 }.bind(this));
@@ -5114,6 +5143,8 @@
                     props = this.tmplProps;
                 } else {
                     // ... 进入编译流程
+                    // ... 返回编译后的的字符串形式的函数
+                    debugger;
                     var source = compiler.compile(this.tmplStr,
                         this.env.asyncFilters,
                         this.env.extensionsList,
@@ -5125,6 +5156,8 @@
                 }
 
                 this.blocks = this._getBlocks(props);
+                // ... 编译后的主体函数
+                // ... note 编译后还有若干其他辅助函数 如 todo
                 this.rootRenderFunc = props.root;
                 this.compiled = true;
             },
