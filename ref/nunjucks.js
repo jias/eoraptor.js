@@ -890,6 +890,8 @@
             }
         }
 
+        // ... 运行时对模板返回的字符串做最后一道处理
+        // ... 处理特殊值 + escape
         function suppressValue(val, autoescape) {
             val = (val !== undefined && val !== null) ? val : "";
 
@@ -1269,7 +1271,6 @@
                     tok = '';
                     var data;
                     var in_comment = false;
-
 
                     if (this._matches(this.tags.COMMENT_START)) {
                         in_comment = true;
@@ -4751,15 +4752,22 @@
         var globals = modules["globals"];
         var Frame = runtime.Frame;
 
+        // ... 运行环境类
+        // ... 用户根据不同的需求，以不同的参数创建不同的运行环境实例
+        // ... 如：envFoo的loader从以foo为根目录加载模板 而envBar则以bar为根目录
+        // ... 这样在用一个页面可以同时使用多种配置的环境
+        // ... 在浏览器端通常情况下都不需要多个运行环境
         var Environment = Obj.extend({
             init: function(loaders, opts) {
+                opts = opts || {};
                 // The dev flag determines the trace that'll be shown on errors.
                 // If set to true, returns the full trace from the error point,
                 // otherwise will return trace starting from Template.render
                 // (the full trace from within nunjucks may confuse developers using
                 //  the library)
                 // defaults to false
-                opts = opts || {};
+                // ... 简单的说 dev为true时会抛出所有错误 
+                // ... 为false时 只会抛出render方法被调用以后的错误
                 this.dev = !!opts.dev;
                 this.lexerTags = opts.tags;
 
@@ -4769,6 +4777,8 @@
                 // defaults to false
                 this.autoesc = !!opts.autoescape;
 
+                // ... 挂载loaders 类型为数组
+                // ... 如果没有传入自定义的loaders 则根据执行环境(node/browser)挂载对应的loaders
                 if (!loaders) {
                     // The filesystem loader is only available client-side
                     if (builtin_loaders.FileSystemLoader) {
@@ -4791,6 +4801,7 @@
                 }
             },
 
+            // ... 待分析
             initCache: function() {
                 // Caching and cache busting
                 var cache = {};
@@ -4816,10 +4827,24 @@
                 return this.extensions[name];
             },
 
+            // ... 添加一个全局变量，可以在所有模板使用。
+            // ... 注意：这个会覆盖已有的 name 变量。
             addGlobal: function(name, value) {
                 globals[name] = value;
             },
 
+            // ... 添加名为 name 的自定义过滤器，func 为调用的函数，如果过滤器需要异步的，async 应该为 true 
+            // ... 简单地把filters.js里的filters都复制到this.filters名称空间下
+            // ... demo
+            // ... var nunjucks = require('nunjucks');
+            // ... var env = new nunjucks.Environment();
+            // ... env.addFilter('shorten', function(str, count) {
+            // ...     return str.slice(0, count || 5);
+            // ... });
+            // ... {# Show the first 5 characters #}
+            // ... A message for you: {{ message|shorten }}
+            // ... {# Show the first 20 characters #}
+            // ... A message for you: {{ message|shorten(20) }}
             addFilter: function(name, func, async) {
                 var wrapped = func;
 
@@ -4829,6 +4854,7 @@
                 this.filters[name] = wrapped;
             },
 
+            // ... 获取指定名字的filter函数
             getFilter: function(name) {
                 if (!this.filters[name]) {
                     throw new Error('filter not found: ' + name);
@@ -4836,6 +4862,7 @@
                 return this.filters[name];
             },
 
+            // ... @param name {string} 指定要加载的文件名称
             getTemplate: function(name, eagerCompile, cb) {
                 if (name && name.raw) {
                     // this fixes autoescape for templates referenced in symbols
@@ -4913,6 +4940,7 @@
                 }
             },
 
+            // ... 和Node端的express框架对接
             express: function(app) {
                 var env = this;
 
@@ -4932,6 +4960,7 @@
                 app.set('view', NunjucksView);
             },
 
+            // ... @param name {string} 指定要加载的文件名称
             render: function(name, ctx, cb) {
                 if (lib.isFunction(ctx)) {
                     cb = ctx;
@@ -5041,6 +5070,14 @@
             }
         });
 
+        // Compile the given string into a reusable nunjucks Template object.
+        // ... nunjucts.compile 内部实例化该类
+        // ... @src string|object 模板字符串
+        // ...      如果是object 形如 {type: 'code', obj: { root: root }}
+        // ...      如果是{type: 'string', obj: 'foofoo'} 这和string格式一样
+        // ... todo @env 如果不传 则内部指定默认的env
+        // ... @path
+        // ... @eagerCompile 是否马上执行编译
         var Template = Obj.extend({
             init: function(src, env, path, eagerCompile) {
                 this.env = env || new Environment();
@@ -5064,9 +5101,7 @@
                 this.path = path;
 
                 if (eagerCompile) {
-                    lib.withPrettyErrors(this.path,
-                        this.env.dev,
-                        this._compile.bind(this));
+                    lib.withPrettyErrors(this.path, this.env.dev, this._compile.bind(this));
                 } else {
                     this.compiled = false;
                 }
@@ -5144,13 +5179,12 @@
                 } else {
                     // ... 进入编译流程
                     // ... 返回编译后的的字符串形式的函数
-                    debugger;
                     var source = compiler.compile(this.tmplStr,
                         this.env.asyncFilters,
                         this.env.extensionsList,
                         this.path,
                         this.env.lexerTags);
-
+                    debugger;
                     var func = new Function(source);
                     props = func();
                 }
