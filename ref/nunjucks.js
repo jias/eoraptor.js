@@ -2636,7 +2636,9 @@
                 return ret;
             },
 
-            // ... 进行词法解析
+            // ... 进行语法分析 即把词法分析器提取出来的token(简单的object对象)转化成对应类型的Node类的实例
+            // ... note 语法分析过程和词法分析过程(即token提取)是同时步进的。
+            //     语法分析器使用词法分析器对字符流中包含的token进行提取和预取，并马上进行分析处理。
             parseNodes: function() {
                 var tok;
                 var buf = [];
@@ -2646,6 +2648,7 @@
                 // ... todo 这里的实现有待进一步优化啊!!!
                 // ... tip  预读的下一个token存在了peeked属性上
                 while ((tok = this.nextToken())) {
+                    debugger;
                 
                     if (tok.type == lexer.TOKEN_DATA) {
                         var data = tok.value;
@@ -2710,12 +2713,13 @@
             // ... 创建语法树
             parseAsRoot: function() {
                 // ... 将原代码拆分
-                // ... 词法解析的正式开始
-                // ... 返回tokens数组 形式为 [token1, token2] 其中每个token都是词语上对应的JS类的一个实例
-                var r = this.parseNodes(); // 拆分的代码
+                // ... 语法分析的正式开始
+                // ... 返回AST的节点数组 即[node1, node2, ...] 其中每个node
+                // ... 都是nodes.js模块中定义的不同类型的Node类的一个实例
+                var astNodes = this.parseNodes(); // 拆分的代码
                 // ... 创建语法树永远的根节点
-                var r2 = new nodes.Root(0, 0, r); // 拆分的代码
-                return r2; // 拆分的代码
+                var ast = new nodes.Root(0, 0, astNodes); // 拆分的代码
+                return ast; // 拆分的代码
                 // return new nodes.Root(0, 0, this.parseNodes()); // 原代码
             }
         });
@@ -4114,7 +4118,8 @@
                 }
 
                 // ... 此处将源代码分解为三部来写 方便分析
-                // ... step1: parser.parse
+                // ... step1: parser.parse 语法分析生成语法树
+                // ... note 词法提取包含在语法分析内部，两种行为在内部是并行进行的。
                 var __ast = parser.parse(src, extensions, lexerTags);
                 console.log('%c parser.parse ', logStyle);
                 console.log(__ast);
@@ -5136,6 +5141,7 @@
                 }
 
                 return lib.withPrettyErrors(this.path, this.env.dev, function() {
+                    debugger;
                     this.compile();
 
                     // ... 当前作用域不是简单的Object对象，是Context类的实例，并且整合了blocks对象
