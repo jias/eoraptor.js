@@ -927,11 +927,21 @@
         // ... 运行时查找name
         // ... todo frame参数是干什么的
         function contextOrFrameLookup(context, frame, name) {
+            debugger;
             var val = frame.lookup(name);
-            return (val !== undefined && val !== null) ?
-                val :
-                // 从当前的作用域查找
-                context.lookup(name);
+            // ... 注释掉的原代码
+            // return (val !== undefined && val !== null) ?
+            //     val :
+            //     // 从当前的作用域查找
+            //     context.lookup(name);
+
+            // ... 分解的代码
+            if (val !== undefined && val !== null) {
+
+            } else {
+                val = context.lookup(name);
+            }
+            return val;
         }
 
         function handleError(error, lineno, colno) {
@@ -4093,6 +4103,8 @@
                 var c = new Compiler();
 
                 // Run the extension preprocessors against the source.
+                // ... 此处的extension就是通过env.addExtension方法添加的扩展
+                // ... todo 待分析 extension的preprocess
                 if (extensions && extensions.length) {
                     for (var i = 0; i < extensions.length; i++) {
                         if ('preprocess' in extensions[i]) {
@@ -4108,12 +4120,12 @@
                 console.log(__ast);
 
                 // ... step2: transformer.transform
-                var __2 = transformer.transform(__ast, asyncFilters, name);
+                var __ast2 = transformer.transform(__ast, asyncFilters, name);
                 console.log('%c transformer.transform ', logStyle);
-                console.log(__2);
+                console.log(__ast2);
 
                 // ... step3: compiler.compile
-                c.compile(__2);
+                c.compile(__ast2);
 
                 // ... 源代码开始
                 // c.compile(transformer.transform(parser.parse(src, extensions, lexerTags),
@@ -4817,6 +4829,9 @@
                 this.cache = cache;
             },
 
+            // ... 扩展功能的核心方法之一
+            // ... 添加一个名为 name 的扩展，ext 为一个对象
+            // ... todo 分析runtime的调用细节
             addExtension: function(name, extension) {
                 extension._name = name;
                 this.extensions[name] = extension;
@@ -5178,7 +5193,7 @@
                     props = this.tmplProps;
                 } else {
                     // ... 进入编译流程
-                    // ... 返回编译后的的字符串形式的函数
+                    // ... 返回编译后的字符串形式的函数
                     var source = compiler.compile(this.tmplStr,
                         this.env.asyncFilters,
                         this.env.extensionsList,
