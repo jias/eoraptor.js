@@ -1103,8 +1103,21 @@
             };
         }
 
-        // ... 标记生成器
-        // ...todo 分析过程
+        // ... 词法分析器(核心功能是提取器)
+        // ...
+        // ... var tt = new Tokenizer('Hi {{tpl|safe}}!');
+        // ... var nextT
+        // ... while(nextT = tt.nextToken()){
+        // ...     console.log(nextT);
+        // ... }
+        // ...
+        // ... Object {type: "data", value: "Hi ", lineno: 0, colno: 0}
+        // ... Object {type: "variable-start", value: "{{", lineno: 0, colno: 3}
+        // ... Object {type: "symbol", value: "tpl", lineno: 0, colno: 3}
+        // ... Object {type: "pipe", value: "|", lineno: 0, colno: 6}
+        // ... Object {type: "symbol", value: "safe", lineno: 0, colno: 7}
+        // ... Object {type: "variable-end", value: "}}", lineno: 0, colno: 11}
+        // ... Object {type: "data", value: "!", lineno: 0, colno: 11}
         function Tokenizer(str, tags) {
             this.str = str;
             this.index = 0;
@@ -1125,6 +1138,7 @@
             };
         }
 
+        // ... 词法分析的核心方法
         Tokenizer.prototype.nextToken = function() {
             var lineno = this.lineno;
             var colno = this.colno;
@@ -1337,6 +1351,8 @@
             throw new Error("Could not parse text");
         };
 
+        // ... 遇到"时调用parseString('"') 遇到'时调用parseString("'")
+        // ... 目的就是取出引号之间的字符串
         Tokenizer.prototype.parseString = function(delimiter) {
             this.forward();
 
@@ -1394,12 +1410,14 @@
             return null;
         };
 
+        // ... 提取从当前位置开始 到能和charString中的字符匹配的字符之间的字符串集合
         Tokenizer.prototype._extractUntil = function(charString) {
             // Extract all non-matching chars, with the default matching set
             // to everything
             return this._extractMatching(true, charString || "");
         };
 
+        // ... 提取从当前位置开始且和charString中的字符匹配的字符串集合
         Tokenizer.prototype._extract = function(charString) {
             // Extract all matching chars (no default, so charString must be
             // explicit)
@@ -1407,10 +1425,13 @@
         };
 
         // ... 当breakOnMatch为true时，从当前index开始一直向前查找，
-        //     直到遇到charString中的一个字符停止，
-        //     返回从起始index到停止时刻index之间的所有字符
-        //     
-        // ... 这个方法名命名的有待改进
+        // ... 直到遇到charString中的一个字符停止，
+        // ... 返回从起始index到停止时刻index之间的所有字符
+        // ... eg   _extractMatching(true, '{') + '123{' = '123'
+        // ... 当breakOnMatch为false时，从当前index开始一直向前查找，每一个
+        // ... 字符都需要和charString中的一个字符匹配，直到发现第一个不匹配的字符时停止
+        // ... 返回从起始index开始匹配到的所有字符
+        // ... eg   _extractMatching(false, '123') + '123{' = '123'
         Tokenizer.prototype._extractMatching = function(breakOnMatch, charString) {
             // Pull out characters until a breaking char is hit.
             // If breakOnMatch is false, a non-matching char stops it.
