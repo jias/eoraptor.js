@@ -1104,20 +1104,6 @@
         }
 
         // ... 词法分析器(核心功能是提取器)
-        // ...
-        // ... var tt = new Tokenizer('Hi {{tpl|safe}}!');
-        // ... var nextT
-        // ... while(nextT = tt.nextToken()){
-        // ...     console.log(nextT);
-        // ... }
-        // ...
-        // ... Object {type: "data", value: "Hi ", lineno: 0, colno: 0}
-        // ... Object {type: "variable-start", value: "{{", lineno: 0, colno: 3}
-        // ... Object {type: "symbol", value: "tpl", lineno: 0, colno: 3}
-        // ... Object {type: "pipe", value: "|", lineno: 0, colno: 6}
-        // ... Object {type: "symbol", value: "safe", lineno: 0, colno: 7}
-        // ... Object {type: "variable-end", value: "}}", lineno: 0, colno: 11}
-        // ... Object {type: "data", value: "!", lineno: 0, colno: 11}
         function Tokenizer(str, tags) {
             this.str = str;
             this.index = 0;
@@ -1140,6 +1126,7 @@
 
         // ... 词法分析的核心方法
         Tokenizer.prototype.nextToken = function() {
+            debugger;
             var lineno = this.lineno;
             var colno = this.colno;
             if (this.in_code) {
@@ -1150,13 +1137,20 @@
                 if (this.is_finished()) {
                     // We have nothing else to parse
                     return null;
-                } else if (cur == "\"" || cur == "'") {
+                } 
+                // ... 如果是引号 表示字符串的开始
+                // ... todo 如何处理foo's的情况
+                else if (cur == "\"" || cur == "'") {
                     // We've hit a string
                     return token(TOKEN_STRING, this.parseString(cur), lineno, colno);
-                } else if ((tok = this._extract(whitespaceChars))) {
+                } 
+                // ... 如果是空白字符
+                else if ((tok = this._extract(whitespaceChars))) {
                     // We hit some whitespace
                     return token(TOKEN_WHITESPACE, tok, lineno, colno);
-                } else if ((tok = this._extractString(this.tags.BLOCK_END)) ||
+                } 
+                // ... blockend 如果匹配 则结束in_code状态
+                else if ((tok = this._extractString(this.tags.BLOCK_END)) ||
                     (tok = this._extractString('-' + this.tags.BLOCK_END))) {
                     // Special check for the block end tag
                     //
@@ -1166,11 +1160,15 @@
                     // doesn't consume these elsewhere
                     this.in_code = false;
                     return token(TOKEN_BLOCK_END, tok, lineno, colno);
-                } else if ((tok = this._extractString(this.tags.VARIABLE_END))) {
+                } 
+                // ... variable end 如果匹配 则结束in_code状态
+                else if ((tok = this._extractString(this.tags.VARIABLE_END))) {
                     // Special check for variable end tag (see above)
                     this.in_code = false;
                     return token(TOKEN_VARIABLE_END, tok, lineno, colno);
-                } else if (cur === 'r' && this.str.charAt(this.index + 1) === '/') {
+                } 
+                // ... 这种正则的情况文档中没用提到 先不分析
+                else if (cur === 'r' && this.str.charAt(this.index + 1) === '/') {
                     // Skip past 'r/'.
                     this.forwardN(2);
 
@@ -1204,7 +1202,10 @@
                         body: regexBody,
                         flags: regexFlags
                     }, lineno, colno);
-                } else if (delimChars.indexOf(cur) != -1) {
+                } 
+                // ... 如果是任何一种delimChars "()[]{}%*-+/#,:|.<>=!"
+                // ... todo find case
+                else if (delimChars.indexOf(cur) != -1) {
                     // We've hit a delimiter (a special char like a bracket)
                     this.forward();
                     var complexOps = ['==', '!=', '<=', '>=', '//', '**'];
@@ -1249,11 +1250,16 @@
                     }
 
                     return token(type, cur, lineno, colno);
-                } else {
+                } 
+                // ... 当前的字符就是个普通字符
+                else {
                     // We are not at whitespace or a delimiter, so extract the
                     // text and parse it
+                    // ... 取出最小的字符单元
                     tok = this._extractUntil(whitespaceChars + delimChars);
 
+                    // ... 如果是纯数字
+                    // ... todo case
                     if (tok.match(/^[-+]?[0-9]+$/)) {
                         if (this.current() == '.') {
                             this.forward();
@@ -1262,9 +1268,13 @@
                         } else {
                             return token(TOKEN_INT, tok, lineno, colno);
                         }
-                    } else if (tok.match(/^(true|false)$/)) {
+                    } 
+                    // ... 如果是布尔单词
+                    else if (tok.match(/^(true|false)$/)) {
                         return token(TOKEN_BOOLEAN, tok, lineno, colno);
-                    } else if (tok) {
+                    } 
+                    // ... 只要in_code的状态是true 则普通的字符串都是symbol
+                    else if (tok) {
                         return token(TOKEN_SYMBOL, tok, lineno, colno);
                     } else {
                         throw new Error("Unexpected value while parsing: " + tok);
@@ -1274,6 +1284,8 @@
                 // Parse out the template text, breaking on tag
                 // delimiters because we need to look for block/variable start
                 // tags (don't use the full delimChars for optimization)
+                // ... 这个地方不需要反复拼接 可以优化到while之前
+                // ... {{{#
                 var beginChars = (this.tags.BLOCK_START.charAt(0) +
                     this.tags.VARIABLE_START.charAt(0) +
                     this.tags.COMMENT_START.charAt(0) +
@@ -1351,8 +1363,8 @@
             throw new Error("Could not parse text");
         };
 
+        // ... 提取两个引号之间的字符串
         // ... 遇到"时调用parseString('"') 遇到'时调用parseString("'")
-        // ... 目的就是取出引号之间的字符串
         Tokenizer.prototype.parseString = function(delimiter) {
             this.forward();
 
@@ -1360,6 +1372,7 @@
             var colno = this.colno;
             var str = "";
 
+            // ... 只要是没结束且下一个字符不是目标引号 就一直收集下去
             while (!this.is_finished() && this.current() != delimiter) {
                 var cur = this.current();
 
@@ -1518,6 +1531,14 @@
         Tokenizer.prototype.previous = function() {
             return this.str.charAt(this.index - 1);
         };
+
+        // var tt = new Tokenizer('Hi {{tpl|safe}}!');
+        // var tt = new Tokenizer('{{"abc}}!');
+        // // var tt = new Tokenizer("{% if foo %}foo's bar{% endif %}");
+        // var nextT
+        // while(nextT = tt.nextToken()){
+        //     console.log(nextT);
+        // }
 
         modules['lexer'] = {
             lex: function(src, tags) {
@@ -5226,7 +5247,8 @@
                         this.env.extensionsList,
                         this.path,
                         this.env.lexerTags);
-                    debugger;
+                    console.log('%c source ', logStyle);
+                    console.log(source);
                     var func = new Function(source);
                     props = func();
                 }
