@@ -24,7 +24,7 @@
                 var src = props[k];
                 var parent = prototype[k];
 
-                // ... 用fnTest.test(src)方法在测试src回调中是否有parent关键字！不严谨呀！
+                // ... 用fnTest.test(src)方法在测试src回调中是否有parent关键字！相当不严谨！
                 if (typeof parent == "function" &&
                     typeof src == "function" &&
                     fnTest.test(src)) {
@@ -97,7 +97,7 @@
         // withPrettyErrors('path', 'xxx', function () {
         //     捕获回调函数中的任何错误
         // })
-        exports.withPrettyErrors = function(path, withInternals, func) {
+        exports.withPrettyErrors = function (path, withInternals, func) {
             try {
                 return func();
             } catch (e) {
@@ -711,6 +711,7 @@
                 this.parent = parent;
             },
 
+            // ... set('foo.bar', 'fb')
             set: function(name, val, resolveUp) {
                 // Allow variables with dots by automatically creating the
                 // nested structure
@@ -738,6 +739,7 @@
                 obj[parts[parts.length - 1]] = val;
             },
 
+            // ... get只能读取当前frame实例set进去的值
             get: function(name) {
                 var val = this.variables[name];
                 if (val !== undefined && val !== null) {
@@ -746,6 +748,7 @@
                 return null;
             },
 
+            // ... 除了能读取当前frame实例set进去的值 还能读取parent中的值
             lookup: function(name) {
                 var p = this.parent;
                 var val = this.variables[name];
@@ -755,6 +758,7 @@
                 return p && p.lookup(name);
             },
 
+            // ... todo 目的何在
             resolve: function(name) {
                 var p = this.parent;
                 var val = this.variables[name];
@@ -902,6 +906,7 @@
             return val;
         }
 
+        // ... 从obj对象上
         function memberLookup(obj, val) {
             obj = obj || {};
 
@@ -927,7 +932,7 @@
         // ... 运行时查找name
         // ... todo frame参数是干什么的
         function contextOrFrameLookup(context, frame, name) {
-            debugger;
+            // debugger;
             var val = frame.lookup(name);
             // ... 注释掉的原代码
             // return (val !== undefined && val !== null) ?
@@ -1126,7 +1131,7 @@
 
         // ... 词法分析的核心方法
         Tokenizer.prototype.nextToken = function() {
-            debugger;
+            // debugger;
             var lineno = this.lineno;
             var colno = this.colno;
             if (this.in_code) {
@@ -1255,7 +1260,10 @@
                 else {
                     // We are not at whitespace or a delimiter, so extract the
                     // text and parse it
-                    // ... 取出最小的字符单元
+                    // ... 取出最小的连续的字符单元
+                    // ... note 这里注意要提取的一定是连续的字符单元 即遇到空白时也要停止提取
+                    // ... 
+                    // ... todo "foo bar"
                     tok = this._extractUntil(whitespaceChars + delimChars);
 
                     // ... 如果是纯数字
@@ -1534,7 +1542,7 @@
 
         // var tt = new Tokenizer('Hi {{tpl|safe}}!');
         // var tt = new Tokenizer('{{"abc}}!');
-        // // var tt = new Tokenizer("{% if foo %}foo's bar{% endif %}");
+        // var tt = new Tokenizer("{%if foo%}bar{%endif%}");
         // var nextT
         // while(nextT = tt.nextToken()){
         //     console.log(nextT);
@@ -1578,8 +1586,8 @@
         var Object = modules["object"];
         var lib = modules["lib"];
 
-        // ... 词法分析工具
-        // ... 词法分析工具的分析过程依赖了词法提取工具(Tokenizer)
+        // ... 语法分析工具
+        // ... 语法分析工具的分析过程依赖了词法分析工具(Tokenizer)
         var Parser = Object.extend({
             init: function(tokens) {
                 // ... 这个属性的命名不好，该属性指向一个Tokenizer的实例，应该命名为"tokenizer"
@@ -1594,7 +1602,7 @@
 
             // ... 预读下一个token
             // ... note 这里是Parser的nextToken方法 内部调用了tokenizer的nextToken方法
-            // ... todo withWhitespace参数功能待分析
+            // ... note withWhitespace是undifined时 则如果下一个token是空白字符 则返回下下个token
             nextToken: function(withWhitespace) {
                 var tok;
 
@@ -1611,6 +1619,8 @@
 
                 tok = this.tokens.nextToken();
 
+                // ... 默认如果下一个tokens是空白字符 则返回下下个token
+                // ... 当withWhitespace为true时 即nextToken(true) 则不考虑是否是空白字符
                 if (!withWhitespace) {
                     while (tok && tok.type == lexer.TOKEN_WHITESPACE) {
                         tok = this.tokens.nextToken();
@@ -1621,6 +1631,7 @@
             },
 
             // ... 预读下一个token并缓存
+            // ... note 当peekToken反复调用时 指针不会继续前进
             peekToken: function() {
                 this.peeked = this.peeked || this.nextToken();
                 return this.peeked;
@@ -2009,6 +2020,7 @@
                 var tag = this.peekToken();
                 var node;
 
+                // ... 初始化If节点实例 具有conf/body/eles_属性 初始值都是null
                 if (this.skipSymbol('if') || this.skipSymbol('elif')) {
                     node = new nodes.If(tag.lineno, tag.colno);
                 } else if (this.skipSymbol('ifAsync')) {
@@ -2021,11 +2033,16 @@
 
                 node.cond = this.parseExpression();
                 this.advanceAfterBlockEnd(tag.value);
-
+                // debugger;
+                // ... if的内容都收集到body属性中
+                // ... node.body是NodeList的实例
                 node.body = this.parseUntilBlocks('elif', 'else', 'endif');
                 var tok = this.peekToken();
 
                 switch (tok && tok.value) {
+                    // ... else if语法解析后其实是在eles里在嵌套一层if语法
+                    // ... if (x) {X} elif (y) {Y} else {Z}
+                    // ... >> if (x) {X} else { if (y) {Y} else {Z} }
                     case "elif":
                         node.else_ = this.parseIf();
                         break;
@@ -2075,10 +2092,14 @@
                 return node;
             },
 
+            // ... 提取完整的block语句
+            // ... 在parseNodes方法中 如过发现当先tok是block start 
+            // ... 则紧接着就会进入该方法 提取完整的block语句
             parseStatement: function() {
                 var tok = this.peekToken();
                 var node;
 
+                // ... block start的下一个token必须是symbol
                 if (tok.type != lexer.TOKEN_SYMBOL) {
                     this.fail('tag name expected', tok.lineno, tok.colno);
                 }
@@ -2088,6 +2109,7 @@
                     return null;
                 }
 
+                // ... 分发到具体的分支语句进行解析
                 switch (tok.value) {
                     case 'raw':
                         return this.parseRaw();
@@ -2686,11 +2708,10 @@
                 var buf = [];
 
                 // ... note 在分析当前token的同时还预读了下一个token 只是为了判断"是否要删除
-                //          当前token的value的右边空白字符" 
-                // ... todo 这里的实现有待进一步优化啊!!!
+                //          当前token的value的右边空白字符"
                 // ... tip  预读的下一个token存在了peeked属性上
+                    // debugger;
                 while ((tok = this.nextToken())) {
-                    debugger;
                 
                     if (tok.type == lexer.TOKEN_DATA) {
                         var data = tok.value;
@@ -2716,7 +2737,6 @@
                         }
 
                         // ... 对模板中原始字符串的处理
-                        // ... 原始字符串对应的token是 nodes.Output + nodes.TemplateData
                         // buf.push(new nodes.Output(tok.lineno,
                         //     tok.colno, [new nodes.TemplateData(tok.lineno,
                         //         tok.colno,
@@ -2759,6 +2779,7 @@
                 // ... 返回AST的节点数组 即[node1, node2, ...] 其中每个node
                 // ... 都是nodes.js模块中定义的不同类型的Node类的一个实例
                 var astNodes = this.parseNodes(); // 拆分的代码
+                debugger;
                 // ... 创建语法树永远的根节点
                 var ast = new nodes.Root(0, 0, astNodes); // 拆分的代码
                 return ast; // 拆分的代码
@@ -5183,7 +5204,7 @@
                 }
 
                 return lib.withPrettyErrors(this.path, this.env.dev, function() {
-                    debugger;
+                    // debugger;
                     this.compile();
 
                     // ... 当前作用域不是简单的Object对象，是Context类的实例，并且整合了blocks对象
@@ -5192,7 +5213,7 @@
                     var syncResult = null;
 
                     frame = frame || new Frame()
-
+// debugger;
                     this.rootRenderFunc(this.env, context, frame, runtime, cb || function(err, res) {
                         if (err) {
                             throw err;
