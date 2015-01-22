@@ -930,7 +930,6 @@
         }
 
         // ... 运行时查找name
-        // ... todo frame参数是干什么的
         function contextOrFrameLookup(context, frame, name) {
             // debugger;
             var val = frame.lookup(name);
@@ -941,9 +940,12 @@
             //     context.lookup(name);
 
             // ... 分解的代码
+            // ... 如果从frame中取到了值 那么直接返回该值
             if (val !== undefined && val !== null) {
 
-            } else {
+            } 
+            // ... 如果从frame中没有取到值 在尝试从context中取值
+            else {
                 val = context.lookup(name);
             }
             return val;
@@ -1603,7 +1605,7 @@
             // ... 预读下一个token
             // ... note 这里是Parser的nextToken方法 内部调用了tokenizer的nextToken方法
             // ... note withWhitespace是undifined时 则如果下一个token是空白字符 则返回下下个token
-            nextToken: function(withWhitespace) {
+            nextToken: function (withWhitespace) {
                 var tok;
 
                 // 如果已经有缓存的预读
@@ -5213,7 +5215,7 @@
                     var syncResult = null;
 
                     frame = frame || new Frame()
-// debugger;
+debugger;
                     this.rootRenderFunc(this.env, context, frame, runtime, cb || function(err, res) {
                         if (err) {
                             throw err;
