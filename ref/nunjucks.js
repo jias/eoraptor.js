@@ -68,7 +68,7 @@
 
             return new_cls;
         }
-        console.log('object.js');
+        // console.log('object.js');
         console.dir(extend(Object, "Object", {}));
         modules['object'] = extend(Object, "Object", {});
     })();
@@ -424,7 +424,7 @@
             }
         });
 
-        console.log('___Node Class___');
+        // console.log('___Node Class___');
         console.dir(Node);
 
         // Abstract nodes
@@ -1542,13 +1542,13 @@
             return this.str.charAt(this.index - 1);
         };
 
-        // var tt = new Tokenizer('Hi {{tpl|safe}}!');
+        var tt = new Tokenizer('Hi {{tpl}}!');
         // var tt = new Tokenizer('{{"abc}}!');
         // var tt = new Tokenizer("{%if foo%}bar{%endif%}");
-        // var nextT
-        // while(nextT = tt.nextToken()){
-        //     console.log(nextT);
-        // }
+        var nextT
+        while(nextT = tt.nextToken()){
+            console.log(nextT);
+        }
 
         modules['lexer'] = {
             lex: function(src, tags) {
@@ -2781,7 +2781,7 @@
                 // ... 返回AST的节点数组 即[node1, node2, ...] 其中每个node
                 // ... 都是nodes.js模块中定义的不同类型的Node类的一个实例
                 var astNodes = this.parseNodes(); // 拆分的代码
-                debugger;
+                ;
                 // ... 创建语法树永远的根节点
                 var ast = new nodes.Root(0, 0, astNodes); // 拆分的代码
                 return ast; // 拆分的代码
@@ -4191,8 +4191,8 @@
 
                 // ... step2: transformer.transform
                 var __ast2 = transformer.transform(__ast, asyncFilters, name);
-                console.log('%c transformer.transform ', logStyle);
-                console.log(__ast2);
+                // console.log('%c transformer.transform ', logStyle);
+                // console.log(__ast2);
 
                 // ... step3: compiler.compile
                 c.compile(__ast2);
@@ -5215,7 +5215,7 @@
                     var syncResult = null;
 
                     frame = frame || new Frame()
-debugger;
+
                     this.rootRenderFunc(this.env, context, frame, runtime, cb || function(err, res) {
                         if (err) {
                             throw err;
@@ -5270,8 +5270,8 @@ debugger;
                         this.env.extensionsList,
                         this.path,
                         this.env.lexerTags);
-                    console.log('%c source ', logStyle);
-                    console.log(source);
+                    // console.log('%c source ', logStyle);
+                    // console.log(source);
                     var func = new Function(source);
                     props = func();
                 }

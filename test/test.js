@@ -76,6 +76,13 @@ describe('variable', function () {
         var ret = tpl({a:'v'});
         expect(ret).to.be('v');
     });
+    it('"{{=a.length}}"', function(){
+        var tpl = ec('{{=a.length}}');
+        var ret = tpl({a:['1','2']});
+        // console.log(tpl.source);
+        expect(ret).to.be('2');
+    });
+
     it('"{{= a }}"', function(){
         var tpl = ec('{{= a }}');
         var ret = tpl({a:'v'});

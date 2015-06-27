@@ -123,7 +123,7 @@ var data = {
 		<h2>{{title}}</h2>
         {{^list child}}
         	输出上一层的标题：{{&parent.title}} 相当于 {{../title}}
-        	如果当前item意外纯在'&group.title'链，那么使用&child强调当前item
+        	如果当前item意外纯在'&parent.title'链，那么使用&child强调当前item
         	如：{{&child.&group.title}}
         	当前item的父作用域可以省略&child，只在有冲突时或多层嵌套时才使用。
         	{{title}} === {{&child.title}}

@@ -1,7 +1,5 @@
 # eoraptor.js
 
-# NOTE: 不要使用，已不在维护！
-
 A mini expression javascript template engine without any dependence. Compatible with client-side and server-side.
 
 ## Features
@@ -25,7 +23,7 @@ A quick glance at the [unit test](http://jias.github.io/eoraptor.js/test/test.ht
 
 Including the eoraptor engine by script tag.
 
-```markup
+```html
 <script src="path/to/eoraptor.min.js"></script>
 ```
 
@@ -33,7 +31,7 @@ The classic `hello world` example achieved through a variety of ways.
 
 ###### Method 1：Compiling a template from a string parameter.
 
-```javascript
+```js
 var hw = eoraptor.compile("Hello {{=name}}!");
 hw({"name": "world"});
 // "Hello world!"
@@ -159,20 +157,20 @@ tpl({"name": "eoraptor.js"});
 
 ## Template
 
-#### variable(html-escaped by default)
+#### variable
 
-`{{=key}}` / `{{=["key"]}}`
+`{{this.key}}` / `{{this["key"]}}`
 
 * key: required, the direct value of the `key` in context data.
 
-> Under the hood, the function returned by `eoraptor.compile()` is builded without `with` statement, so it will not throw errors like `underscore`.
+> Under the hood, the function returned by `eoraptor.compile()` is builded without `with` statement, so the expression needs to start with `this.` prefix and it will not throw errors like `underscore`.
 
 Demo: output the value of the `key` in context data.
 
 ```js
-var tpl = eoraptor.compile("{{=name}}");
-tpl.render({"name": "<h1>eoraptor.js</h1>"});
-// "&lt;h1&gt;eoraptor.js&lt;/h1&gt;"
+var tpl = eoraptor.compile("{{this.name}}");
+tpl.render({"name": "eoraptor.js"});
+// "eoraptor.js"
 ```
 
 Demo: if there is no such `key` in context data.
@@ -185,31 +183,33 @@ tpl.render({});
 
 #### un-escaped variable:
 
-`{{-key}}` / `{{-["key"]}}`
+`{{-this.key}}` / `{{-this["key"]}}`
 
 * key: required, the direct value of the `key` in context data.
 
-demo: output the un-escaped value of the `key` in context data.
+demo: output the html-escaped value of the `key` in context data.
 
 ```js
 var tpl = eoraptor.compile("{{@this.name}}");
 tpl.render({"name": "<h1> eoraptor.js </h1>"});
-// "<h1> eoraptor.js </h1>"
+// "&lt;h1&gt; eoraptor.js &lt;/h1&gt;"
 ```
 
-#### if block: comparing by `==`.
+#### if block:
 
-START with: `{{?key}}` / `{{?["key"]}}`
+START with: `{{#anyValue}}` / `{{#this.key}}` / `{{#this["key"]}}` / `{{#anyValue vs anyValue}}`
 
+* anyValue: any value of any types like `foo`, `true`, `[]`, `{}`, etc.
 * key: required, the direct value of the `key` in context data.
+* vs: available comparation flags contains `==`, `===`, `!=`, `!==`, `>=`, `<=`, `>`, `<`
 
 END with: `{{/}}`
 
-Demo: To determine whether the `if()` is like `true`, comparing by `==`..
+Demo: To determine whether the `if()` is like `true`, comparing by `==`.
 
 ```js
 var data = {"foo": 1};
-var tpl = eoraptor.compile("{{?foo}}like true{{/}}");
+var tpl = eoraptor.compile("{{#this.foo}}like true{{/}}");
 tpl.render(data);
 // "like true"
 ```
@@ -217,13 +217,8 @@ tpl.render(data);
 Demo: To determine whether the `if()` is `true`, comparing by `===`.
 
 ```js
-var data = {
-    "foo": 1,
-    "fooIsTrue": function () {
-        return this.foo === true;
-    }
-};
-var tpl = eoraptor.compile("{{?fooIsTrue}}is true{{/}}");
+var data = {"foo": 1};
+var tpl = eoraptor.compile("{{#this.foo===true}}is true{{/}}");
 tpl.render(data);
 // "" empty string
 ```

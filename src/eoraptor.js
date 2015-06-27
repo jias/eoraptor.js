@@ -16,7 +16,7 @@ var eoraptor = {
     compile: compile,
     // setDelimiter: setDelimiter,
     escape: escaper,
-    extract: extract,
+    // extract: extract,
     debug: false,
     _: {
         e: escaper,
@@ -433,17 +433,17 @@ function escaper(str) {
 // ## escaper ##
 
 // get templates from the script tags in document.
-function extract() {
-    var scripts = document.getElementsByTagName('script'),
-        script;
-    for (var i = 0, l = scripts.length; i < l; i++) {
-        script = scripts[i];
-        if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/x-eoraptor') {
-            compile(script.id, trim(script.innerHTML));
-            script.setAttribute('compiled','1');
-        }
-    }
-}
+// function extract() {
+//     var scripts = document.getElementsByTagName('script'),
+//         script;
+//     for (var i = 0, l = scripts.length; i < l; i++) {
+//         script = scripts[i];
+//         if (!script.getAttribute('compiled') && script.id && script.innerHTML && script.type === 'text/x-eoraptor') {
+//             compile(script.id, trim(script.innerHTML));
+//             script.setAttribute('compiled','1');
+//         }
+//     }
+// }
 
 var FUNCTION = 'function';
 function value(v, data) {
