@@ -390,10 +390,6 @@ tpl.render({
 
 The JavaScript Templates script is released under the [MIT license](http://opensource.org/licenses/MIT).
 
-## Author
-
-@gnosaij / [www.joy-studio.com](http://www.joy-studio.com)
-
 
 ## Changelog
 
